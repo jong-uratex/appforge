@@ -1,0 +1,23 @@
+# Cloudflare Pages & Workers Configuration for Uratex MIS AppForge
+name = "uratex-mis-appforge"
+compatibility_date = "2026-11-09"
+compatibility_flags = ["nodejs_compat"]
+
+[site]
+bucket = "./dist"
+
+# Optional Cloudflare D1 Database binding for production SQL persistence
+# Run 'npx wrangler d1 create uratex-appforge-db' to generate your database ID
+[[d1_databases]]
+binding = "DB"
+database_name = "uratex-appforge-db"
+database_id = "your-d1-database-id-here"
+
+# Optional Cloudflare KV for serverless caching & session storage
+[[kv_namespaces]]
+binding = "APPFORGE_KV"
+id = "your-kv-namespace-id-here"
+
+[vars]
+ENVIRONMENT = "production"
+ORGANIZATION = "Uratex Philippines"
