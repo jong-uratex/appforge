@@ -251,9 +251,153 @@ export interface SDLCStagesData {
   };
 }
 
+// ==========================================
+// Official Uratex System Change Request (SCR) Form Types
+// Modeled directly from Uratex PDF: SYSTEM CHANGE REQUEST FORM
+// ==========================================
+
+export type SCRChangeType =
+  | 'New Functionality'
+  | 'Enhancement'
+  | 'Process Change'
+  | 'Data/Configuration Change'
+  | 'Bug/Error Correction'
+  | 'Integration Change'
+  | 'Report/Dashboard Change'
+  | 'Security/Access Change';
+
+export type SCRPriority = 'Critical' | 'High' | 'Medium' | 'Low';
+
+export interface SCRBusinessRequirement {
+  id: string;
+  no: string; // e.g. "BR-01", "BR-02"
+  description: string;
+}
+
+export interface SCRRiskImpact {
+  id: string;
+  areaImpact: string;
+  risk: string;
+  consideration: string;
+}
+
+export type SCRTestType =
+  | 'Unit Testing'
+  | 'System Integration Testing'
+  | 'Regression Testing'
+  | 'User Acceptance Testing'
+  | 'Performance Testing'
+  | 'Security Testing';
+
+export type SCRUATResult = 'Passed' | 'Passed with Minor Issues' | 'Failed' | 'Pending';
+
+export interface SCRApproverSignature {
+  id: string;
+  name: string;
+  role: string;
+  signed: boolean;
+  signatureText?: string;
+  signedDate?: string;
+}
+
+export interface SCRTimelinePhase {
+  id: string;
+  phase: string;
+  activity: string;
+  targetStartDate: string;
+  targetCompletionDate: string;
+  durationDays: number;
+}
+
+export type SCRImplementationResult = 'Successfully Implemented' | 'Implemented with Issues' | 'Rolled Back' | 'Pending';
+
+export interface SCRFormData {
+  // Document Header
+  documentNo: string; // e.g. "SCR-2026-003"
+  requestDate: string; // e.g. "November 06, 2026"
+  requestedBy: string; // e.g. "Jona Dizon"
+  department: string; // e.g. "Sales Ops."
+  systemApplication: string; // e.g. "MDM Portal"
+  module: string; // e.g. "MDM Portal - Price Set-up (Regular) - Price Set-up [GCR CHAR VALUE], - Promo Upload"
+  priority: SCRPriority;
+
+  // Section 1: Change Request Information
+  changeRequestTitle: string;
+  typesOfChange: SCRChangeType[];
+  currentSituation: string[]; // bullet points
+  requestedChange: string[]; // bullet points
+
+  // Section 2: Business Reason / Justification
+  businessReasons: string[]; // bullet points
+
+  // Section 3: Business Requirements
+  businessRequirements: SCRBusinessRequirement[];
+
+  // Section 4: Impact Assessment
+  systemsAffected: {
+    cpq: boolean;
+    mdm: boolean;
+    sap: boolean;
+    customerPortal: boolean;
+    pricingEngine: boolean;
+    reportingDashboard: boolean;
+    other?: string;
+  };
+  businessAreasAffected: {
+    sales: boolean;
+    finance: boolean;
+    mdm: boolean;
+    manufacturing: boolean;
+    purchasing: boolean;
+    it: boolean;
+    other?: string;
+  };
+  dataAffected: string;
+  integrationAffected: string;
+
+  // Section 5: Risk and Impact
+  risksAndImpacts: SCRRiskImpact[];
+
+  // Section 6: Acceptance Criteria
+  acceptanceCriteria: string[]; // bullet points
+
+  // Section 7: Testing Requirement
+  testTypes: SCRTestType[];
+  uatOwner: string;
+  uatTargetDate: string;
+  uatResult: SCRUATResult;
+
+  // Section 9: Approval
+  approvers: SCRApproverSignature[];
+
+  // Section 10: Target Timeline
+  timelinePhases: SCRTimelinePhase[];
+
+  // Section 11: Implementation
+  implementation: {
+    devStart?: string;
+    devCompletion?: string;
+    uatStart?: string;
+    uatCompletion?: string;
+    productionDeployment?: string;
+    deploymentPlan?: string;
+    rollbackPlan?: string;
+    postImplementationValidation?: string;
+  };
+
+  // Section 12: Change Closure
+  closure: {
+    actualImplementationDate?: string;
+    implementationResult?: SCRImplementationResult;
+    pirRequired: boolean;
+    closedBy?: string;
+    closureDate?: string;
+  };
+}
+
 export interface AppRequest {
   id: string;
-  code: string;
+  code: string; // e.g. "SCR-2026-003"
   title: string;
   type: RequestType;
   department: Department;
@@ -273,6 +417,7 @@ export interface AppRequest {
   tasks?: ProjectTask[];
   comments: CommentMessage[];
   sdlc: SDLCStagesData;
+  scr?: SCRFormData; // Full Official System Change Request Form data
 }
 
 export type ActivityType =

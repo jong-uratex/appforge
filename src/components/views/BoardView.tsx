@@ -32,6 +32,7 @@ export const BoardView: React.FC = () => {
     setIsNewRequestModalOpen,
     workflows,
     tasks,
+    setActiveView,
   } = useAppForge();
 
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({
@@ -328,6 +329,19 @@ export const BoardView: React.FC = () => {
                                   <span className="font-mono text-[11px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
                                     {item.code}
                                   </span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedRequest(item);
+                                      setActiveView('scr-document');
+                                    }}
+                                    className="px-1.5 py-0.5 text-[10px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded shrink-0 flex items-center gap-1 transition-colors"
+                                    title="Open Uratex SCR Form (PDF Layout)"
+                                  >
+                                    <FileText className="w-3 h-3 text-blue-600" />
+                                    <span>SCR Form</span>
+                                  </button>
                                   <span className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors line-clamp-1">
                                     {item.title}
                                   </span>

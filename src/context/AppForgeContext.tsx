@@ -16,6 +16,7 @@ import {
   WorkflowStage,
   ActivityItem,
   ActivityType,
+  SCRFormData,
 } from '../types/appforge';
 import {
   INITIAL_REQUESTS,
@@ -41,7 +42,8 @@ export type AppViewMode =
   | 'tasks'
   | 'dashboard'
   | 'sdlc-matrix'
-  | 'workflows';
+  | 'workflows'
+  | 'scr-document';
 
 interface AppForgeContextType {
   // Requests
@@ -177,6 +179,11 @@ interface AppForgeContextType {
     roi: string,
     lessons: string
   ) => void;
+
+  // Official SCR Form Actions
+  updateSCRFormData: (requestId: string, updates: Partial<SCRFormData>) => void;
+  signApprover: (requestId: string, approverId: string, signatureText?: string) => void;
+  addSCRBusinessRequirement: (requestId: string, requirement: { no: string; description: string }) => void;
 
   // Cloudflare export/import
   exportData: () => string;
@@ -577,12 +584,12 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }): AppRequest => {
     const existingNumbers = requests
       .map((r) => {
-        const match = r.code.match(/URX-REQ-\d{4}-(\d+)/);
+        const match = r.code.match(/SCR-\d{4}-(\d+)/) || r.code.match(/URX-REQ-\d{4}-(\d+)/);
         return match ? parseInt(match[1], 10) : 0;
       })
       .filter((n) => !isNaN(n));
-    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 94;
-    const formattedCode = `URX-REQ-2026-${String(nextNumber).padStart(4, '0')}`;
+    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 4;
+    const formattedCode = `SCR-2026-${String(nextNumber).padStart(3, '0')}`;
 
     const chosenWorkflow =
       workflows.find((w) => w.id === data.workflowId) ||
@@ -604,10 +611,10 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       requesterName: currentUser.name,
       requesterEmail: currentUser.email,
       requesterAvatar: currentUser.avatar,
-      assignedLead: 'Jenor Ricafort',
+      assignedLead: 'John Christian Garon',
       assignedLeadAvatar: USER_PERSONAS[0].avatar,
       startDate: new Date().toISOString().split('T')[0],
-      targetGoLiveDate: data.targetGoLiveDate || '2027-02-28',
+      targetGoLiveDate: data.targetGoLiveDate || '2026-11-20',
       tags: data.tags.length > 0 ? data.tags : [data.department.split(' ')[0], data.type],
       subtasks: [
         {
@@ -649,7 +656,7 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           effortEstimateDays: data.type === 'Quick Win' ? 3 : data.type === 'Enhancement' ? 12 : 28,
           impactScore: data.urgency === 'Critical' ? 5 : data.urgency === 'High' ? 4 : 3,
           priorityScore: data.urgency === 'Critical' ? 95 : 75,
-          targetQuarter: 'Q1 2027',
+          targetQuarter: 'Q4 2026',
           decision: 'Pending',
         },
         requirements: {
@@ -706,6 +713,85 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           uptimePercentage: 100,
         },
       },
+      scr: {
+        documentNo: formattedCode,
+        requestDate: new Date().toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' }),
+        requestedBy: currentUser.name,
+        department: data.department,
+        systemApplication: 'MDM Portal',
+        module: `${data.department} Module`,
+        priority: data.urgency === 'Critical' ? 'Critical' : data.urgency === 'High' ? 'High' : data.urgency === 'Medium' ? 'Medium' : 'Low',
+        changeRequestTitle: data.title,
+        typesOfChange: [data.type === 'New Application' ? 'New Functionality' : data.type === 'Quick Win' ? 'Bug/Error Correction' : 'Enhancement'],
+        currentSituation: [data.problemDescription],
+        requestedChange: [data.expectedBenefits],
+        businessReasons: [data.businessJustification],
+        businessRequirements: [
+          { id: `br-${Date.now()}-1`, no: 'BR-01', description: `Implement ${data.title} functionality for ${data.department}` },
+          { id: `br-${Date.now()}-2`, no: 'BR-02', description: `Validate business rule compliance with expected benefit: "${data.expectedBenefits.slice(0, 70)}..."` }
+        ],
+        systemsAffected: {
+          cpq: false,
+          mdm: true,
+          sap: data.department.includes('Logistics') || data.department.includes('Plant'),
+          customerPortal: false,
+          pricingEngine: false,
+          reportingDashboard: false,
+        },
+        businessAreasAffected: {
+          sales: data.department.includes('Sales'),
+          finance: data.department.includes('Finance'),
+          mdm: true,
+          manufacturing: data.department.includes('Plant') || data.department.includes('Production'),
+          purchasing: data.department.includes('Procurement') || data.department.includes('Supply'),
+          it: true,
+        },
+        dataAffected: `${data.department} Operational & Master Data`,
+        integrationAffected: 'None',
+        risksAndImpacts: [
+          { id: `ri-${Date.now()}`, areaImpact: data.department, risk: 'Operational change management during rollout', consideration: 'Provide user training and verification before production' }
+        ],
+        acceptanceCriteria: [
+          `The system shall successfully fulfill: "${data.title}"`,
+          `All designated functional requirements verified against testing suite`,
+          `Target users (${data.targetUserBase}) can execute workflow without errors`
+        ],
+        testTypes: ['Regression Testing', 'User Acceptance Testing'],
+        uatOwner: currentUser.name,
+        uatTargetDate: data.targetGoLiveDate || '2026-11-20',
+        uatResult: 'Pending',
+        approvers: [
+          { id: 'appr-1', name: 'Zyrin Yumul', role: 'Product Owner', signed: false },
+          { id: 'appr-2', name: 'Anton Medina', role: 'DT Manager', signed: false },
+          { id: 'appr-3', name: 'Eric Borromeo', role: 'IT Manager', signed: false },
+          { id: 'appr-4', name: 'Jhun Espinosa', role: 'App Dev Manager', signed: false },
+          { id: 'appr-5', name: 'John Christian Garon', role: 'Application Developer', signed: false },
+          { id: 'appr-6', name: 'Nathaniel Trinidad', role: 'App Dev - QA', signed: false },
+        ],
+        timelinePhases: [
+          { id: 'tp-1', phase: 'Requirements', activity: 'Review & finalize Change Request', targetStartDate: 'Nov 10, 2026', targetCompletionDate: 'Nov 10, 2026', durationDays: 1 },
+          { id: 'tp-2', phase: 'SCR Approval', activity: 'Business review & SCR sign-off', targetStartDate: 'Nov 11, 2026', targetCompletionDate: 'Nov 11, 2026', durationDays: 1 },
+          { id: 'tp-3', phase: 'Development', activity: 'Develop requested changes', targetStartDate: 'Nov 11, 2026', targetCompletionDate: 'Nov 11, 2026', durationDays: 1 },
+          { id: 'tp-4', phase: 'Testing', activity: 'QA / Functional Testing', targetStartDate: 'Nov 11, 2026', targetCompletionDate: 'Nov 11, 2026', durationDays: 1 },
+          { id: 'tp-5', phase: 'UAT', activity: 'User Acceptance Testing', targetStartDate: 'Nov 12, 2026', targetCompletionDate: 'Nov 12, 2026', durationDays: 1 },
+          { id: 'tp-6', phase: 'Bug Fixes/Adjustment', activity: 'Bug fixing / adjustment', targetStartDate: 'Nov 12, 2026', targetCompletionDate: 'Nov 12, 2026', durationDays: 1 },
+          { id: 'tp-7', phase: 'Deployment', activity: 'Production deployment', targetStartDate: 'Nov 13, 2026', targetCompletionDate: 'Nov 13, 2026', durationDays: 1 },
+          { id: 'tp-8', phase: 'Post Deployment', activity: 'Monitoring', targetStartDate: 'Nov 13, 2026', targetCompletionDate: 'Nov 13, 2026', durationDays: 1 },
+        ],
+        implementation: {
+          devStart: 'Nov 11, 2026',
+          devCompletion: 'Nov 11, 2026',
+          uatStart: 'Nov 12, 2026',
+          uatCompletion: 'Nov 12, 2026',
+          productionDeployment: data.targetGoLiveDate || 'Nov 13, 2026',
+          deploymentPlan: 'Deploy schema and code updates to Cloudflare Edge environment',
+          rollbackPlan: 'Git revert to previous stable tag if validation fails',
+          postImplementationValidation: 'Verify end-to-end user transactions in production',
+        },
+        closure: {
+          pirRequired: false,
+        },
+      },
     };
 
     setRequests((prev) => [newReq, ...prev]);
@@ -715,11 +801,130 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       targetId: newReq.id,
       targetCode: newReq.code,
       targetTitle: newReq.title,
-      actionSummary: `Submitted new ${newReq.type} for ${newReq.department}`,
-      details: `Target Go-Live: ${newReq.targetGoLiveDate} | Urgency: ${newReq.urgency} | Workflow: ${chosenWorkflow.name}`,
+      actionSummary: `Submitted System Change Request (${newReq.code})`,
+      details: `Target Go-Live: ${newReq.targetGoLiveDate} | Urgency: ${newReq.urgency} | Department: ${newReq.department}`,
     });
 
     return newReq;
+  };
+
+  const updateSCRFormData = (requestId: string, updates: Partial<SCRFormData>) => {
+    setRequests((prev) =>
+      prev.map((r) => {
+        if (r.id !== requestId) return r;
+        const currentSCR = r.scr || {
+          documentNo: r.code,
+          requestDate: new Date().toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' }),
+          requestedBy: r.requesterName,
+          department: r.department,
+          systemApplication: 'MDM Portal',
+          module: `${r.department} Module`,
+          priority: r.urgency === 'Critical' ? 'Critical' : r.urgency === 'High' ? 'High' : 'Medium',
+          changeRequestTitle: r.title,
+          typesOfChange: ['Enhancement'],
+          currentSituation: [r.sdlc.ideation.problemDescription],
+          requestedChange: [r.sdlc.ideation.expectedBenefits],
+          businessReasons: [r.sdlc.ideation.businessJustification],
+          businessRequirements: [],
+          systemsAffected: { cpq: false, mdm: true, sap: false, customerPortal: false, pricingEngine: false, reportingDashboard: false },
+          businessAreasAffected: { sales: false, finance: false, mdm: true, manufacturing: false, purchasing: false, it: false },
+          dataAffected: 'MDM Master Data',
+          integrationAffected: 'None',
+          risksAndImpacts: [],
+          acceptanceCriteria: [],
+          testTypes: ['Regression Testing'],
+          uatOwner: r.requesterName,
+          uatTargetDate: r.targetGoLiveDate,
+          uatResult: 'Pending',
+          approvers: [],
+          timelinePhases: [],
+          implementation: {},
+          closure: { pirRequired: false },
+        };
+        const updatedSCR: SCRFormData = {
+          ...currentSCR,
+          ...updates,
+        };
+        return {
+          ...r,
+          scr: updatedSCR,
+        };
+      })
+    );
+
+    const req = requests.find((r) => r.id === requestId);
+    if (req) {
+      logActivity({
+        type: 'gate_signed',
+        targetId: requestId,
+        targetCode: req.code,
+        targetTitle: req.title,
+        actionSummary: 'Updated System Change Request (SCR) Form',
+        details: 'Recorded updates to official Uratex SCR specification.',
+      });
+    }
+  };
+
+  const signApprover = (requestId: string, approverId: string, signatureText?: string) => {
+    const target = requests.find((r) => r.id === requestId);
+    setRequests((prev) =>
+      prev.map((r) => {
+        if (r.id !== requestId || !r.scr) return r;
+        const updatedApprovers = (r.scr.approvers || []).map((appr) => {
+          if (appr.id === approverId) {
+            return {
+              ...appr,
+              signed: true,
+              signatureText: signatureText || currentUser.name,
+              signedDate: new Date().toISOString().split('T')[0],
+            };
+          }
+          return appr;
+        });
+
+        return {
+          ...r,
+          scr: {
+            ...r.scr,
+            approvers: updatedApprovers,
+          },
+        };
+      })
+    );
+
+    if (target) {
+      logActivity({
+        type: 'gate_signed',
+        targetId: target.id,
+        targetCode: target.code,
+        targetTitle: target.title,
+        actionSummary: `SCR Sign-off completed by ${signatureText || currentUser.name}`,
+        details: `Official signature recorded in Section 9 of ${target.code}`,
+      });
+    }
+  };
+
+  const addSCRBusinessRequirement = (
+    requestId: string,
+    req: { no: string; description: string }
+  ) => {
+    setRequests((prev) =>
+      prev.map((r) => {
+        if (r.id !== requestId || !r.scr) return r;
+        const newReqItem = {
+          id: `br-${Date.now()}`,
+          no: req.no,
+          description: req.description,
+        };
+        return {
+          ...r,
+          scr: {
+            ...r.scr,
+            businessRequirements: [...(r.scr.businessRequirements || []), newReqItem],
+          },
+        };
+      })
+    );
   };
 
   const updateRequest = (id: string, updates: Partial<AppRequest>) => {
@@ -1300,6 +1505,9 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateTestCaseStatus,
         addBug,
         submitEvaluation,
+        updateSCRFormData,
+        signApprover,
+        addSCRBusinessRequirement,
         exportData,
         importData,
         resetToDefault,

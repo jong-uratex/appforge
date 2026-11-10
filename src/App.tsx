@@ -8,6 +8,7 @@ import { TimelineView } from './components/views/TimelineView';
 import { TaskManagementView } from './components/views/TaskManagementView';
 import { DashboardView } from './components/views/DashboardView';
 import { SDLCGateMatrixView } from './components/views/SDLCGateMatrixView';
+import { SCRDocumentView } from './components/scr/SCRDocumentView';
 import { RequestDetailDrawer } from './components/modals/RequestDetailDrawer';
 import { NewRequestModal } from './components/modals/NewRequestModal';
 import { CloudflareDeployModal } from './components/modals/CloudflareDeployModal';
@@ -22,6 +23,7 @@ const MainContent: React.FC = () => {
 
   return (
     <main className="flex-1 pb-16">
+      {activeView === 'scr-document' && <SCRDocumentView />}
       {activeView === 'board' && <BoardView />}
       {activeView === 'kanban' && <KanbanView />}
       {activeView === 'timeline' && <TimelineView />}
