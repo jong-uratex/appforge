@@ -21,3 +21,5 @@ id = "your-kv-namespace-id-here"
 [vars]
 ENVIRONMENT = "production"
 ORGANIZATION = "Uratex Philippines"
+
+pages_build_output_dir = "dist"
