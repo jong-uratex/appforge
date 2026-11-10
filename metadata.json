@@ -2,5 +2,7 @@
   "name": "MIS AppForge - Uratex Philippines",
   "description": "Internal application request and SDLC lifecycle management platform for Uratex Philippines with Monday.com-style workflow boards, stage gates, and team collaboration.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

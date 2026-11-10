@@ -38,7 +38,7 @@ export const Header: React.FC = () => {
                 MIS AppForge
               </span>
               <span className="text-[11px] font-medium text-slate-500 tracking-wide uppercase">
-                Uratex Philippines SDLC
+                Internal App Request System
               </span>
             </div>
           </div>
