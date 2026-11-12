@@ -34,6 +34,7 @@ const STORAGE_TASKS_KEY = 'URATEX_MIS_APPFORGE_TASKS_V2';
 const STORAGE_USERS_KEY = 'URATEX_MIS_APPFORGE_USERS_V2';
 const STORAGE_AUTH_USER_KEY = 'URATEX_MIS_APPFORGE_CURRENT_USER_V2';
 const STORAGE_ACTIVITIES_KEY = 'URATEX_MIS_APPFORGE_ACTIVITIES_V2';
+const STORAGE_IS_AUTH_KEY = 'URATEX_MIS_APPFORGE_IS_AUTH_V2';
 
 export type AppViewMode =
   | 'dashboard'
@@ -96,12 +97,15 @@ interface AppForgeContextType {
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
 
   // Authentication & RBAC
+  isAuthenticated: boolean;
+  setIsAuthenticated: (val: boolean) => void;
   users: UserPersona[];
   currentUser: UserPersona;
   permissions: RolePermissions;
   activePersona: UserPersona; // alias for currentUser
   setActivePersona: (user: UserPersona) => void;
-  loginUser: (email: string) => boolean;
+  loginUser: (email: string, password?: string) => boolean;
+  loginAsPersona: (user: UserPersona) => void;
   registerUser: (data: {
     name: string;
     email: string;
@@ -209,6 +213,16 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return USER_PERSONAS[0]; // Jenor Ricafort (Admin)
   });
 
+  // Authentication session state (requires login before accessing the app)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_IS_AUTH_KEY);
+      return saved === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   // Workflows state
   const [workflows, setWorkflows] = useState<ProjectWorkflow[]>(() => {
     try {
@@ -290,13 +304,31 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     ROLE_PERMISSIONS[currentUser.role] || ROLE_PERMISSIONS['Team Member'];
 
   // Auth Functions
-  const loginUser = (email: string): boolean => {
+  const loginUser = (email: string, _password?: string): boolean => {
     const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
     if (found) {
       setCurrentUser(found);
+      setIsAuthenticated(true);
+      try {
+        localStorage.setItem(STORAGE_IS_AUTH_KEY, 'true');
+        localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(found));
+      } catch {}
       return true;
     }
     return false;
+  };
+
+  const loginAsPersona = (user: UserPersona) => {
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    try {
+      localStorage.setItem(STORAGE_IS_AUTH_KEY, 'true');
+      localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(user));
+    } catch {}
+  };
+
+  const setActivePersona = (user: UserPersona) => {
+    loginAsPersona(user);
   };
 
   const registerUser = (data: {
@@ -323,12 +355,19 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setUsers((prev) => [...prev, newUser]);
     setCurrentUser(newUser);
+    setIsAuthenticated(true);
+    try {
+      localStorage.setItem(STORAGE_IS_AUTH_KEY, 'true');
+      localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(newUser));
+    } catch {}
     return newUser;
   };
 
   const logoutUser = () => {
-    // defaults back to viewing as guest or first member
-    setCurrentUser(users[0]);
+    setIsAuthenticated(false);
+    try {
+      localStorage.removeItem(STORAGE_IS_AUTH_KEY);
+    } catch {}
   };
 
   // Activity Logging Function
@@ -1457,9 +1496,12 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         users,
         currentUser,
         permissions,
+        isAuthenticated,
+        setIsAuthenticated,
         activePersona: currentUser,
-        setActivePersona: setCurrentUser,
+        setActivePersona,
         loginUser,
+        loginAsPersona,
         registerUser,
         logoutUser,
         activeView,

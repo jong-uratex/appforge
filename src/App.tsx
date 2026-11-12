@@ -16,12 +16,24 @@ import { AuthModal } from './components/modals/AuthModal';
 import { WorkflowBuilderModal } from './components/modals/WorkflowBuilderModal';
 import { NewTaskModal } from './components/modals/NewTaskModal';
 import { ActivityFeedSidebar } from './components/sidebar/ActivityFeedSidebar';
+import { AdminLTELoginPage } from './components/adminlte/AdminLTELoginPage';
 import { Activity } from 'lucide-react';
 
 const AdminLTEAppLayout: React.FC = () => {
-  const { activeView, isActivitySidebarOpen, setIsActivitySidebarOpen, activities } = useAppForge();
+  const {
+    activeView,
+    isActivitySidebarOpen,
+    setIsActivitySidebarOpen,
+    activities,
+    isAuthenticated,
+  } = useAppForge();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // If user is not yet logged in, present the AdminLTE Login Page
+  if (!isAuthenticated) {
+    return <AdminLTELoginPage />;
+  }
 
   return (
     <div className="min-h-screen flex bg-[#f4f6f9] text-gray-900 font-sans antialiased">

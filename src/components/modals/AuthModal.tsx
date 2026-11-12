@@ -12,6 +12,7 @@ import {
   Building2,
   Briefcase,
   AlertCircle,
+  LogOut,
 } from 'lucide-react';
 
 const DEPARTMENTS: Department[] = [
@@ -35,6 +36,7 @@ export const AuthModal: React.FC = () => {
     loginUser,
     registerUser,
     permissions,
+    logoutUser,
   } = useAppForge();
 
   const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'roles'>('signin');
@@ -229,6 +231,20 @@ export const AuthModal: React.FC = () => {
                       </div>
                     </button>
                   ))}
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logoutUser();
+                      setIsAuthModalOpen(false);
+                    }}
+                    className="px-3.5 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg flex items-center gap-1.5 transition-colors"
+                  >
+                    <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Log Out (Lock Session)</span>
+                  </button>
                 </div>
               </div>
             </div>

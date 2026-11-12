@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   Table2,
   CheckSquare,
+  LogOut,
 } from 'lucide-react';
 
 interface AdminLTENavbarProps {
@@ -42,6 +43,7 @@ export const AdminLTENavbar: React.FC<AdminLTENavbarProps> = ({
     setIsActivitySidebarOpen,
     isActivitySidebarOpen,
     requests,
+    logoutUser,
   } = useAppForge();
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -244,6 +246,17 @@ export const AdminLTENavbar: React.FC<AdminLTENavbarProps> = ({
                   >
                     <Bell className="w-3.5 h-3.5 text-blue-600" />
                     <span>Activity Audit Feed ({activities.length})</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      logoutUser();
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-rose-50 text-rose-700 flex items-center gap-2 border-t border-gray-100 font-semibold"
+                  >
+                    <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Sign Out (Lock Session)</span>
                   </button>
                 </div>
 

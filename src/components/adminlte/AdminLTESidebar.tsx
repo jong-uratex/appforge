@@ -15,6 +15,7 @@ import {
   Layers,
   ChevronRight,
   ExternalLink,
+  LogOut,
 } from 'lucide-react';
 
 interface AdminLTESidebarProps {
@@ -42,6 +43,7 @@ export const AdminLTESidebar: React.FC<AdminLTESidebarProps> = ({
     setIsCloudflareModalOpen,
     setIsAuthModalOpen,
     setIsActivitySidebarOpen,
+    logoutUser,
   } = useAppForge();
 
   const handleNavClick = (view: AppViewMode) => {
@@ -294,12 +296,25 @@ export const AdminLTESidebar: React.FC<AdminLTESidebarProps> = ({
         </div>
 
         {/* Sidebar Footer Info */}
-        {!isSidebarCollapsed && (
-          <div className="p-3 border-t border-[#4b545c] text-[10px] text-gray-400 flex items-center justify-between shrink-0">
-            <span>Uratex MIS</span>
-            <span className="font-mono text-gray-400">v2.4.0</span>
-          </div>
-        )}
+        <div className="p-2 border-t border-[#4b545c] shrink-0 bg-[#2d3238]">
+          <button
+            onClick={() => logoutUser()}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded text-xs text-rose-300 hover:bg-rose-900/30 hover:text-rose-200 transition-colors text-left"
+            title="Sign Out / Lock Session"
+          >
+            <LogOut className="w-4 h-4 shrink-0 text-rose-400" />
+            {!isSidebarCollapsed && (
+              <span className="font-semibold flex-1">Sign Out</span>
+            )}
+          </button>
+
+          {!isSidebarCollapsed && (
+            <div className="px-3 pt-2 pb-1 text-[10px] text-gray-400 flex items-center justify-between">
+              <span>Uratex MIS</span>
+              <span className="font-mono text-gray-500">v2.4.0</span>
+            </div>
+          )}
+        </div>
       </aside>
     </>
   );
