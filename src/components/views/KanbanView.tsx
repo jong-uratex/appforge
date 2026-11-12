@@ -10,6 +10,7 @@ import {
   Layers,
   ChevronRight,
 } from 'lucide-react';
+import { AdminLTEFilterCard } from '../adminlte/AdminLTEFilterCard';
 
 interface KanbanColumn {
   id: string;
@@ -135,11 +136,11 @@ export const KanbanView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-4 max-w-[1600px] mx-auto">
       
       {/* Toast Notification */}
       {gateToast && (
-        <div className="fixed bottom-6 right-6 max-w-md bg-rose-900 text-white p-4 rounded-xl shadow-2xl border border-rose-700 flex items-start gap-3 z-50 animate-in fade-in slide-in-from-bottom-5">
+        <div className="fixed bottom-6 right-6 max-w-md bg-rose-900 text-white p-4 rounded shadow-2xl border border-rose-700 flex items-start gap-3 z-50 animate-in fade-in slide-in-from-bottom-5">
           <AlertCircle className="w-5 h-5 text-rose-300 shrink-0 mt-0.5" />
           <div className="text-xs">
             <div className="font-bold text-white mb-0.5">Uratex SDLC Gate Rule</div>
@@ -147,6 +148,9 @@ export const KanbanView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* AdminLTE Filter Card */}
+      <AdminLTEFilterCard />
 
       {/* Header bar */}
       <div className="flex items-center justify-between text-xs text-slate-600 pb-2">

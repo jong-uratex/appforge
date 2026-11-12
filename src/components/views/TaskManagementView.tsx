@@ -162,13 +162,13 @@ export const TaskManagementView: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 max-w-[1600px] mx-auto">
       
       {/* Top Header & Task KPI Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
-          <div className="text-[10px] font-semibold text-slate-500 uppercase">Total Tasks</div>
-          <div className="text-xl font-bold text-slate-900 font-mono tabular-nums mt-0.5">
+        <div className="bg-white p-3.5 rounded border border-gray-200 shadow-2xs">
+          <div className="text-[10px] font-semibold text-gray-500 uppercase">Total Tasks</div>
+          <div className="text-xl font-bold text-gray-900 font-mono tabular-nums mt-0.5">
             {totalTasks}
           </div>
           <div className="text-[10px] text-slate-400">Across all initiatives</div>

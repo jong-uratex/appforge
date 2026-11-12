@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAppForge } from '../../context/AppForgeContext';
-import { SDLC_STAGES_CONFIG } from '../../data/seedData';
 import {
   TrendingUp,
   CheckCircle2,
@@ -15,8 +14,11 @@ import {
   ListTodo,
   ArrowRight,
   GitFork,
-  Sparkles,
   FileText,
+  Plus,
+  Table2,
+  ArrowUpRight,
+  Code2,
 } from 'lucide-react';
 
 export const DashboardView: React.FC = () => {
@@ -31,6 +33,7 @@ export const DashboardView: React.FC = () => {
     workflows,
     activities,
     setIsActivitySidebarOpen,
+    setIsWorkflowModalOpen,
   } = useAppForge();
 
   // Metrics computation
@@ -76,136 +79,154 @@ export const DashboardView: React.FC = () => {
       : 100;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-5 max-w-[1600px] mx-auto">
       
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-200 text-xs font-semibold mb-3 border border-blue-400/30">
-            <Activity className="w-3.5 h-3.5" />
-            MIS Executive Portfolio Health
+      {/* AdminLTE Signature Small-Boxes / Info-Boxes (4-Column Grid) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* Small Box 1: Total Requests (bg-info / Blue) */}
+        <div className="rounded bg-blue-600 text-white shadow-xs overflow-hidden relative flex flex-col justify-between">
+          <div className="p-4 relative z-10">
+            <h3 className="text-3xl font-extrabold font-mono tracking-tight tabular-nums">
+              {total}
+            </h3>
+            <p className="text-xs font-semibold uppercase tracking-wider text-blue-100 mt-1">
+              Change Requests (SCR)
+            </p>
+            <div className="text-[11px] text-blue-200 mt-0.5 font-medium">
+              {totalEffort} man-days estimated
+            </div>
           </div>
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-white mb-2">
-            Uratex Project Intelligence & Delivery Cockpit
-          </h2>
-          <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
-            Real-time project overview across all active business units. Track customized workflows,
-            SDLC stage gates, cross-initiative task execution, and verified labor ROI.
-          </p>
+          <FileText className="w-18 h-18 text-black/10 absolute top-2 right-2 pointer-events-none" />
+          <button
+            onClick={() => setActiveView('board')}
+            className="w-full py-1.5 px-3 bg-black/15 hover:bg-black/25 text-white/90 hover:text-white text-xs font-medium flex items-center justify-center gap-1 transition-colors select-none"
+          >
+            <span>View All Requests</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-3 pt-4">
+        {/* Small Box 2: In Development (bg-success / Green) */}
+        <div className="rounded bg-emerald-600 text-white shadow-xs overflow-hidden relative flex flex-col justify-between">
+          <div className="p-4 relative z-10">
+            <h3 className="text-3xl font-extrabold font-mono tracking-tight tabular-nums">
+              {inDev}
+            </h3>
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-100 mt-1">
+              Active Sprints (In Dev)
+            </p>
+            <div className="text-[11px] text-emerald-200 mt-0.5 font-medium">
+              {inTesting} in QA & UAT testing
+            </div>
+          </div>
+          <Code2 className="w-18 h-18 text-black/10 absolute top-2 right-2 pointer-events-none" />
+          <button
+            onClick={() => setActiveView('kanban')}
+            className="w-full py-1.5 px-3 bg-black/15 hover:bg-black/25 text-white/90 hover:text-white text-xs font-medium flex items-center justify-center gap-1 transition-colors select-none"
+          >
+            <span>Open Kanban Pipeline</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Small Box 3: Custom Workflows (bg-warning / Amber) */}
+        <div className="rounded bg-amber-500 text-white shadow-xs overflow-hidden relative flex flex-col justify-between">
+          <div className="p-4 relative z-10">
+            <h3 className="text-3xl font-extrabold font-mono tracking-tight tabular-nums">
+              {workflows.length}
+            </h3>
+            <p className="text-xs font-semibold uppercase tracking-wider text-amber-100 mt-1">
+              Custom Workflows
+            </p>
+            <div className="text-[11px] text-amber-100 mt-0.5 font-medium">
+              Flexible stage & status pipelines
+            </div>
+          </div>
+          <GitFork className="w-18 h-18 text-black/10 absolute top-2 right-2 pointer-events-none" />
+          <button
+            onClick={() => setIsWorkflowModalOpen(true)}
+            className="w-full py-1.5 px-3 bg-black/15 hover:bg-black/25 text-white/90 hover:text-white text-xs font-medium flex items-center justify-center gap-1 transition-colors select-none"
+          >
+            <span>Manage Workflows</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Small Box 4: Task Velocity (bg-danger / Red) */}
+        <div className="rounded bg-rose-600 text-white shadow-xs overflow-hidden relative flex flex-col justify-between">
+          <div className="p-4 relative z-10">
+            <h3 className="text-3xl font-extrabold font-mono tracking-tight tabular-nums">
+              {taskCompletionRate}%
+            </h3>
+            <p className="text-xs font-semibold uppercase tracking-wider text-rose-100 mt-1">
+              Task Velocity Rate
+            </p>
+            <div className="text-[11px] text-rose-200 mt-0.5 font-medium">
+              {doneTasks} of {totalTasks} tasks completed
+            </div>
+          </div>
+          <ListTodo className="w-18 h-18 text-black/10 absolute top-2 right-2 pointer-events-none" />
+          <button
+            onClick={() => setActiveView('tasks')}
+            className="w-full py-1.5 px-3 bg-black/15 hover:bg-black/25 text-white/90 hover:text-white text-xs font-medium flex items-center justify-center gap-1 transition-colors select-none"
+          >
+            <span>Open Task Center</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+      </div>
+
+      {/* AdminLTE Card: Active System Change Requests (SCR) */}
+      <div className="bg-white rounded border border-gray-200 shadow-xs overflow-hidden border-t-3 border-t-blue-600">
+        
+        {/* Card Header (AdminLTE card-header) */}
+        <div className="px-4 py-3 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 font-bold text-gray-800 text-sm">
+            <Table2 className="w-4 h-4 text-blue-600" />
+            <span>Active System Change Requests (SCR)</span>
+            <span className="px-2 py-0.5 text-xs font-normal text-gray-500 bg-gray-100 rounded">
+              {requests.length} Initiatives
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setIsNewRequestModalOpen(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded text-xs flex items-center gap-1 shadow-2xs transition-colors"
             >
-              <span>+ New Initiative</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>New Request</span>
             </button>
+
             <button
-              onClick={() => setActiveView('tasks')}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-bold text-xs border border-white/20 transition-colors flex items-center gap-1.5"
+              onClick={() => setActiveView('board')}
+              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded text-xs flex items-center gap-1 transition-colors"
             >
-              <ListTodo className="w-4 h-4 text-rose-400" />
-              <span>Open Task Center</span>
+              <span>View Full Board</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
-      </div>
 
-      {/* KPI Cards Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-            Active Projects
-          </div>
-          <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums mt-1">
-            {total}
-          </div>
-          <div className="text-[10px] text-slate-500 mt-0.5">{workflows.length} workflows in use</div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="text-[11px] font-semibold text-blue-600 uppercase tracking-wider">
-            In Development
-          </div>
-          <div className="text-2xl font-bold text-blue-700 font-mono tabular-nums mt-1">
-            {inDev}
-          </div>
-          <div className="text-[10px] text-slate-500 mt-0.5">Active coding sprints</div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="text-[11px] font-semibold text-rose-600 uppercase tracking-wider">
-            Task Velocity
-          </div>
-          <div className="text-2xl font-bold text-rose-700 font-mono tabular-nums mt-1">
-            {taskCompletionRate}%
-          </div>
-          <div className="text-[10px] text-slate-500 mt-0.5">{doneTasks}/{totalTasks} tasks done</div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="text-[11px] font-semibold text-teal-600 uppercase tracking-wider">
-            QA & UAT
-          </div>
-          <div className="text-2xl font-bold text-teal-700 font-mono tabular-nums mt-1">
-            {inTesting}
-          </div>
-          <div className="text-[10px] text-slate-500 mt-0.5">Regression suites active</div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="text-[11px] font-semibold text-purple-600 uppercase tracking-wider">
-            Gate Compliance
-          </div>
-          <div className="text-2xl font-bold text-purple-700 font-mono tabular-nums mt-1">
-            {gateScore}%
-          </div>
-          <div className="text-[10px] text-slate-500 mt-0.5">Sign-offs satisfied</div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider">
-            Labor Hours Saved
-          </div>
-          <div className="text-2xl font-bold text-emerald-700 font-mono tabular-nums mt-1">
-            +{totalHoursSaved}h/wk
-          </div>
-          <div className="text-[10px] text-slate-500 mt-0.5">Post-launch verified ROI</div>
-        </div>
-      </div>
-
-      {/* Active Projects Status Overview Grid */}
-      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-blue-600" />
-              Active Projects Portfolio Overview
-            </h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Live status, workflow association, effort and task completion breakdown
-            </p>
-          </div>
-          <span className="text-[11px] font-mono text-slate-500 tabular-nums">
-            {requests.length} Initiatives tracked
-          </span>
-        </div>
-
+        {/* Card Body: Table (AdminLTE table table-striped table-hover) */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-                <th className="py-2.5 px-3">Project / Initiative</th>
-                <th className="py-2.5 px-3">Current Status</th>
+              <tr className="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                <th className="py-2.5 px-3">Document Code</th>
+                <th className="py-2.5 px-3 min-w-[240px]">Initiative Title</th>
+                <th className="py-2.5 px-3">Stage / Status</th>
                 <th className="py-2.5 px-3">Workflow</th>
                 <th className="py-2.5 px-3">Department</th>
-                <th className="py-2.5 px-3">Tasks Progress</th>
+                <th className="py-2.5 px-3 min-w-[140px]">Progress</th>
                 <th className="py-2.5 px-3">Lead</th>
                 <th className="py-2.5 px-3 text-right">Target Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {requests.map((r) => {
+            <tbody className="divide-y divide-gray-100">
+              {requests.map((r, idx) => {
                 const pTasks = tasks.filter((t) => t.projectId === r.id);
                 const pTasksDone = pTasks.filter((t) => t.status === 'Done').length;
                 const pTotal = pTasks.length;
@@ -216,80 +237,81 @@ export const DashboardView: React.FC = () => {
                   <tr
                     key={r.id}
                     onClick={() => setSelectedRequest(r)}
-                    className="hover:bg-blue-50/40 cursor-pointer transition-colors group"
+                    className={`cursor-pointer transition-colors hover:bg-blue-50/50 ${
+                      idx % 2 === 1 ? 'bg-gray-50/40' : 'bg-white'
+                    }`}
                   >
-                    <td className="py-3 px-3">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded shrink-0">
-                          {r.code}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedRequest(r);
-                            setActiveView('scr-document');
-                          }}
-                          className="px-1.5 py-0.5 text-[10px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded shrink-0 flex items-center gap-1 transition-colors"
-                          title="Open Uratex SCR Form (PDF Layout)"
-                        >
-                          <FileText className="w-3 h-3 text-blue-600" />
-                          <span>SCR Form</span>
-                        </button>
-                        <span className="font-bold text-slate-900 group-hover:text-blue-700 line-clamp-1">
-                          {r.title}
-                        </span>
+                    {/* Code */}
+                    <td className="py-2.5 px-3">
+                      <span className="font-mono font-bold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded text-[11px]">
+                        {r.code}
+                      </span>
+                    </td>
+
+                    {/* Title */}
+                    <td className="py-2.5 px-3">
+                      <div className="font-bold text-gray-900 hover:text-blue-600 transition-colors line-clamp-1">
+                        {r.title}
+                      </div>
+                      <div className="text-[10px] text-gray-500 line-clamp-1">
+                        {r.scr?.module || r.type}
                       </div>
                     </td>
 
-                    <td className="py-3 px-3">
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-200">
+                    {/* Status Badge */}
+                    <td className="py-2.5 px-3">
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
                         {r.status}
                       </span>
                     </td>
 
-                    <td className="py-3 px-3">
-                      <span className="text-[11px] text-slate-600 font-medium truncate block max-w-[140px]">
+                    {/* Workflow */}
+                    <td className="py-2.5 px-3">
+                      <span className="text-gray-700 font-medium truncate block max-w-[130px]">
                         {wf.name}
                       </span>
                     </td>
 
-                    <td className="py-3 px-3">
-                      <span className="text-[11px] text-slate-600 truncate block max-w-[140px]">
+                    {/* Department */}
+                    <td className="py-2.5 px-3">
+                      <span className="text-gray-600 truncate block max-w-[130px]" title={r.department}>
                         {r.department}
                       </span>
                     </td>
 
-                    <td className="py-3 px-3 min-w-[130px]">
+                    {/* Progress Bar */}
+                    <td className="py-2.5 px-3">
                       <div className="space-y-1">
-                        <div className="flex items-center justify-between text-[10px] text-slate-500">
+                        <div className="flex items-center justify-between text-[10px] text-gray-500 font-mono">
                           <span>{pTasksDone}/{pTotal} tasks</span>
-                          <span className="font-mono font-bold tabular-nums">{pPct}%</span>
+                          <span className="font-bold">{pPct}%</span>
                         </div>
-                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                        <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
                           <div
-                            className="bg-blue-600 h-1.5 rounded-full"
+                            className="bg-blue-600 h-1.5 rounded-full transition-all"
                             style={{ width: `${pPct}%` }}
                           />
                         </div>
                       </div>
                     </td>
 
-                    <td className="py-3 px-3">
+                    {/* Lead */}
+                    <td className="py-2.5 px-3">
                       <div className="flex items-center gap-1.5">
                         <img
                           src={r.assignedLeadAvatar}
                           alt={r.assignedLead}
-                          className="w-5 h-5 rounded-full object-cover"
+                          className="w-5 h-5 rounded-full object-cover ring-1 ring-gray-200"
                           referrerPolicy="no-referrer"
                         />
-                        <span className="font-medium text-slate-800 text-[11px] truncate max-w-[90px]">
+                        <span className="font-medium text-gray-800 text-[11px] truncate max-w-[90px]">
                           {r.assignedLead.split(' ')[0]}
                         </span>
                       </div>
                     </td>
 
-                    <td className="py-3 px-3 text-right font-mono text-[11px] text-slate-600 tabular-nums">
+                    {/* Target Date */}
+                    <td className="py-2.5 px-3 text-right font-mono text-[11px] text-gray-600 tabular-nums">
                       {r.targetGoLiveDate}
                     </td>
                   </tr>
@@ -298,159 +320,151 @@ export const DashboardView: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Card Footer */}
+        <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 flex items-center justify-between">
+          <span>Showing all active change initiatives</span>
+          <span className="font-mono text-[11px]">Audit trail synchronized</span>
+        </div>
       </div>
 
-      {/* Analytics: Team Workload & Department Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Row: Analytics Cards (Department Breakdown & Team Workload) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         
-        {/* Team Member Workload Allocation */}
-        <div className="lg:col-span-6 bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-indigo-600" />
-              Team Workload & Active Tasks
-            </h3>
-            <span className="text-[11px] font-mono text-slate-500 tabular-nums">
-              {users.length} Team Members
+        {/* Card 1: Department Breakdown */}
+        <div className="lg:col-span-6 bg-white rounded border border-gray-200 shadow-xs border-t-3 border-t-emerald-600 overflow-hidden flex flex-col justify-between">
+          <div className="px-4 py-3 bg-white border-b border-gray-200 flex items-center justify-between text-xs font-bold text-gray-800">
+            <div className="flex items-center gap-2">
+              <BarChart className="w-4 h-4 text-emerald-600" />
+              <span>Initiatives by Uratex Department</span>
+            </div>
+            <span className="text-gray-400 font-mono font-normal">
+              {Object.keys(departmentCounts).length} Units
             </span>
           </div>
 
-          <div className="space-y-3 pt-1">
-            {users.map((u) => {
+          <div className="p-4 space-y-3.5">
+            {Object.entries(departmentCounts).map(([dept, count]) => {
+              const pct = Math.round((count / total) * 100);
+              return (
+                <div key={dept} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-gray-700 truncate max-w-[280px]">
+                      {dept}
+                    </span>
+                    <span className="font-mono text-gray-600 font-bold tabular-nums">
+                      {count} ({pct}%)
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="bg-emerald-600 h-2 rounded-full transition-all"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-[11px] text-gray-500">
+            Resource allocation across manufacturing and sales operations
+          </div>
+        </div>
+
+        {/* Card 2: Team Workload */}
+        <div className="lg:col-span-6 bg-white rounded border border-gray-200 shadow-xs border-t-3 border-t-purple-600 overflow-hidden flex flex-col justify-between">
+          <div className="px-4 py-3 bg-white border-b border-gray-200 flex items-center justify-between text-xs font-bold text-gray-800">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-purple-600" />
+              <span>Team Workload & Active Tasks</span>
+            </div>
+            <span className="text-gray-400 font-mono font-normal">
+              {users.length} Personnel
+            </span>
+          </div>
+
+          <div className="p-4 space-y-2.5">
+            {users.slice(0, 5).map((u) => {
               const userTasks = tasks.filter((t) => t.assignedToId === u.id);
               const userDone = userTasks.filter((t) => t.status === 'Done').length;
               const userEstHours = userTasks.reduce((acc, t) => acc + (t.estimatedHours || 0), 0);
               const pct = userTasks.length > 0 ? Math.round((userDone / userTasks.length) * 100) : 0;
 
               return (
-                <div key={u.id} className="p-3 rounded-lg bg-slate-50 border border-slate-200/80 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={u.avatar}
-                        alt={u.name}
-                        className="w-6 h-6 rounded-full object-cover ring-1 ring-slate-200"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div>
-                        <div className="font-bold text-slate-900">{u.name}</div>
-                        <div className="text-[10px] text-slate-400">{u.role} · {u.department.split(' ')[0]}</div>
-                      </div>
-                    </div>
-                    <div className="text-right font-mono text-slate-600 text-[11px]">
-                      <div>{userTasks.length} tasks ({userEstHours}h)</div>
-                      <div className="text-[10px] text-emerald-600 font-bold">{userDone} completed</div>
+                <div key={u.id} className="p-2.5 rounded bg-gray-50 border border-gray-200 text-xs flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <img
+                      src={u.avatar}
+                      alt={u.name}
+                      className="w-7 h-7 rounded-full object-cover ring-1 ring-gray-300 shrink-0"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="truncate">
+                      <div className="font-bold text-gray-900 truncate">{u.name}</div>
+                      <div className="text-[10px] text-gray-500 truncate">{u.title}</div>
                     </div>
                   </div>
 
-                  <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                    <div
-                      className="bg-indigo-600 h-1.5 rounded-full transition-all"
-                      style={{ width: `${pct}%` }}
-                    />
+                  <div className="text-right shrink-0 font-mono text-[11px]">
+                    <span className="font-bold text-gray-800">{userTasks.length} tasks</span>
+                    <div className="text-[10px] text-emerald-600 font-bold">{userDone} done</div>
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
 
-        {/* Department Initiatives Breakdown */}
-        <div className="lg:col-span-6 bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <BarChart className="w-4 h-4 text-blue-600" />
-              Initiatives by Uratex Department
-            </h3>
-            <span className="text-[11px] font-mono text-slate-500 tabular-nums">
-              {Object.keys(departmentCounts).length} Units Active
-            </span>
-          </div>
-
-          <div className="space-y-3 pt-1">
-            {Object.entries(departmentCounts).map(([dept, count]) => {
-              const pct = Math.round((count / total) * 100);
-              return (
-                <div key={dept} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-slate-800 truncate max-w-[260px]">{dept}</span>
-                    <span className="font-mono text-slate-600 tabular-nums font-semibold">
-                      {count} ({pct}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Live Project Audit Trail & Activity Feed */}
-        <div className="lg:col-span-12 bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <Activity className="w-4 h-4 text-emerald-600" />
-                Live Project Audit Trail & Activity Feed
-              </h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Chronological log of stage transitions, ISO gate approvals, and task progress
-              </p>
-            </div>
+          <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-[11px] text-gray-500 flex items-center justify-between">
+            <span>Verified labor savings: +{totalHoursSaved}h/week</span>
             <button
-              onClick={() => setIsActivitySidebarOpen(true)}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1.5 self-start sm:self-auto"
+              onClick={() => setActiveView('tasks')}
+              className="text-blue-600 hover:underline font-semibold"
             >
-              <span>View All ({activities.length}) in Audit Sidebar</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              Task Board →
             </button>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-            {activities.slice(0, 6).map((act) => {
-              const req = requests.find((r) => r.id === act.targetId || r.code === act.targetCode);
-
-              return (
-                <div
-                  key={act.id}
-                  onClick={() => {
-                    if (req) setSelectedRequest(req);
-                    else setIsActivitySidebarOpen(true);
-                  }}
-                  className="p-3 rounded-lg bg-slate-50 border border-slate-200 hover:border-blue-300 hover:bg-blue-50/20 cursor-pointer transition-all space-y-2 group"
-                >
-                  <div className="flex items-center justify-between gap-1 text-[11px]">
-                    <span className="font-mono font-bold text-blue-600 group-hover:underline">
-                      {act.targetCode}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {act.timestamp}
-                    </span>
-                  </div>
-
-                  <p className="text-xs font-semibold text-slate-800 line-clamp-1">
-                    {act.actionSummary}
-                  </p>
-
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                    <img
-                      src={act.actorAvatar}
-                      alt={act.actorName}
-                      className="w-4 h-4 rounded-full object-cover ring-1 ring-slate-200"
-                    />
-                    <span className="truncate">{act.actorName} ({act.actorRole})</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
 
+      </div>
+
+      {/* AdminLTE Card: Recent Audit Log */}
+      <div className="bg-white rounded border border-gray-200 shadow-xs border-t-3 border-t-gray-600 overflow-hidden">
+        <div className="px-4 py-3 bg-white border-b border-gray-200 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2 font-bold text-gray-800 text-sm">
+            <Activity className="w-4 h-4 text-gray-600" />
+            <span>Recent System Activity & Audit Trail</span>
+          </div>
+
+          <button
+            onClick={() => setIsActivitySidebarOpen(true)}
+            className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+          >
+            <span>Open Complete Feed ({activities.length})</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {activities.slice(0, 6).map((act) => (
+            <div
+              key={act.id}
+              onClick={() => setIsActivitySidebarOpen(true)}
+              className="p-3 rounded bg-gray-50 border border-gray-200 hover:border-blue-300 hover:bg-blue-50/20 cursor-pointer transition-colors space-y-1.5"
+            >
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-mono font-bold text-blue-700">{act.targetCode}</span>
+                <span className="text-[10px] text-gray-400 font-mono">{act.timestamp}</span>
+              </div>
+              <p className="text-xs font-semibold text-gray-800 line-clamp-1">
+                {act.actionSummary}
+              </p>
+              <div className="text-[10px] text-gray-500 truncate">
+                by {act.actorName} ({act.actorRole})
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
     </div>

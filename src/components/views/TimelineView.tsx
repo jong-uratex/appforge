@@ -41,10 +41,10 @@ export const TimelineView: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 max-w-[1600px] mx-auto">
       
       {/* Intro info bar */}
-      <div className="flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-xl p-4 text-xs">
+      <div className="flex items-center justify-between bg-white border border-gray-200 rounded p-3.5 text-xs shadow-2xs border-t-3 border-t-teal-600">
         <div className="flex items-center gap-2 text-slate-700">
           <Calendar className="w-4 h-4 text-teal-600" />
           <span className="font-bold">Uratex SDLC Delivery Schedule & Quarter Horizon</span>

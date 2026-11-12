@@ -23,8 +23,6 @@ import {
   Plus,
   GitFork,
   Lock,
-  Printer,
-  PenTool,
 } from 'lucide-react';
 
 export const RequestDetailDrawer: React.FC = () => {
@@ -51,19 +49,14 @@ export const RequestDetailDrawer: React.FC = () => {
     setIsNewTaskModalOpen,
     tasks,
     setActiveView,
-    updateSCRFormData,
-    signApprover,
-    addSCRBusinessRequirement,
   } = useAppForge();
 
-  const [activeTab, setActiveTab] = useState<'scr' | 'sdlc' | 'updates' | 'subtasks' | 'audit'>('scr');
+  const [activeTab, setActiveTab] = useState<'sdlc' | 'updates' | 'subtasks' | 'audit'>('sdlc');
   const [newComment, setNewComment] = useState('');
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newTestCaseTitle, setNewTestCaseTitle] = useState('');
   const [newTestCaseExpected, setNewTestCaseExpected] = useState('');
   const [gateErrorMessage, setGateErrorMessage] = useState<string | null>(null);
-  const [newReqNumber, setNewReqNumber] = useState('');
-  const [newReqDesc, setNewReqDesc] = useState('');
 
   // Evaluation form local state
   const [evalRating, setEvalRating] = useState(selectedRequest?.sdlc.evaluation.rating || 5);
@@ -185,25 +178,12 @@ export const RequestDetailDrawer: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => {
-                setActiveView('scr-document');
-                setSelectedRequest(item);
-              }}
-              className="px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors"
-              title="Open full printable 5-page Uratex SCR Document"
-            >
-              <FileText className="w-3.5 h-3.5 text-blue-600" />
-              <span>Full SCR Document</span>
-            </button>
-            <button
-              onClick={() => setSelectedRequest(null)}
-              className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          <button
+            onClick={() => setSelectedRequest(null)}
+            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200 transition-colors shrink-0"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Gate Policy Toast if triggered */}
@@ -250,23 +230,8 @@ export const RequestDetailDrawer: React.FC = () => {
           </div>
         </div>
 
-        {/* Monday.com Tabs */}
+        {/* Tabs */}
         <div className="flex items-center gap-1 px-5 border-b border-slate-200 bg-white text-xs font-semibold text-slate-600 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('scr')}
-            className={`flex items-center gap-1.5 py-3 px-3 border-b-2 transition-colors shrink-0 ${
-              activeTab === 'scr'
-                ? 'border-blue-600 text-blue-700 font-bold'
-                : 'border-transparent hover:text-slate-900'
-            }`}
-          >
-            <FileText className="w-4 h-4 text-blue-600" />
-            <span>Uratex SCR Form</span>
-            <span className="ml-1 text-[10px] font-bold px-1.5 py-0.2 bg-blue-100 text-blue-800 rounded">
-              PDF Spec
-            </span>
-          </button>
-
           <button
             onClick={() => setActiveTab('sdlc')}
             className={`flex items-center gap-1.5 py-3 px-3 border-b-2 transition-colors shrink-0 ${
@@ -319,270 +284,6 @@ export const RequestDetailDrawer: React.FC = () => {
         {/* Tab Contents (Scrollable Area) */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs text-slate-700">
           
-          {/* TAB 0: URATEX SCR FORM SPECIFICATION */}
-          {activeTab === 'scr' && (
-            <div className="space-y-6">
-              {/* Official Uratex Document Header Card */}
-              <div className="border-2 border-slate-800 rounded-xl overflow-hidden bg-white shadow-xs">
-                <div className="p-4 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <div className="text-[10px] font-mono tracking-widest text-blue-300 uppercase">
-                      URATEX PHILIPPINES · MULTIFLEX RNC CORP
-                    </div>
-                    <h3 className="text-base font-extrabold tracking-tight">
-                      SYSTEM CHANGE REQUEST FORM
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setActiveView('scr-document');
-                        setSelectedRequest(item);
-                      }}
-                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded font-bold text-xs flex items-center gap-1.5 shadow-xs"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Open Full 5-Page View</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Document Information Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 border-b border-slate-200 text-xs divide-x divide-slate-200 divide-y md:divide-y-0">
-                  <div className="p-3 bg-slate-50/50">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Document No:</span>
-                    <span className="font-mono font-bold text-blue-900 text-xs">
-                      {item.scr?.documentNo || item.code}
-                    </span>
-                  </div>
-                  <div className="p-3">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Date:</span>
-                    <span className="font-mono text-slate-800">{item.scr?.requestDate || item.startDate}</span>
-                  </div>
-                  <div className="p-3 bg-slate-50/50">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Requested By:</span>
-                    <span className="font-semibold text-slate-900">{item.scr?.requestedBy || item.requesterName}</span>
-                  </div>
-                  <div className="p-3">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Department:</span>
-                    <span className="text-slate-800">{item.scr?.department || item.department}</span>
-                  </div>
-                  <div className="p-3">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 block">System / Application:</span>
-                    <span className="font-bold text-slate-900">{item.scr?.systemApplication || item.title}</span>
-                  </div>
-                  <div className="p-3 bg-slate-50/50">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Module:</span>
-                    <span className="text-slate-800 font-semibold">{item.scr?.module || 'Price Set-Up'}</span>
-                  </div>
-                  <div className="p-3">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Priority:</span>
-                    <span className="font-bold text-rose-700">{item.scr?.priority || item.urgency}</span>
-                  </div>
-                  <div className="p-3 bg-slate-50/50">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Status:</span>
-                    <span className="font-semibold text-blue-800">{item.status}</span>
-                  </div>
-                </div>
-
-                {/* Section 1: Change Request Information */}
-                <div className="p-4 border-b border-slate-200 space-y-3">
-                  <div className="text-xs font-bold text-slate-900 uppercase tracking-wide bg-slate-100 px-2 py-1 rounded">
-                    1. Change Request Information
-                  </div>
-
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-700 block mb-1.5">Change Type:</span>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {([
-                        'New Functionality',
-                        'Enhancement',
-                        'Process Change',
-                        'Data/Configuration Change',
-                        'Bug/Error Correction',
-                        'Integration Change',
-                        'Report/Dashboard Change',
-                        'Security/Access Change',
-                      ] as const).map((ct) => {
-                        const isChecked = (item.scr?.typesOfChange || []).includes(ct);
-                        return (
-                          <div
-                            key={ct}
-                            onClick={() => {
-                              if (!item.scr) return;
-                              const currentTypes = item.scr.typesOfChange || [];
-                              const newTypes = isChecked
-                                ? currentTypes.filter((t) => t !== ct)
-                                : [...currentTypes, ct];
-                              updateSCRFormData(item.id, { typesOfChange: newTypes });
-                            }}
-                            className={`flex items-center gap-2 p-2 rounded border cursor-pointer select-none transition-colors ${
-                              isChecked
-                                ? 'bg-blue-50 border-blue-400 text-blue-900 font-semibold'
-                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                            }`}
-                          >
-                            {isChecked ? (
-                              <CheckSquare className="w-4 h-4 text-blue-600 shrink-0" />
-                            ) : (
-                              <Square className="w-4 h-4 text-slate-400 shrink-0" />
-                            )}
-                            <span className="text-[11px] leading-tight">{ct}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                    <div className="p-3 bg-slate-50 rounded border border-slate-200 space-y-1">
-                      <span className="text-[10px] font-bold uppercase text-slate-500 block">Situation / Problem:</span>
-                      <p className="text-slate-800 leading-relaxed text-xs">
-                        {item.scr?.currentSituation?.join(' ') || item.sdlc.ideation.problemDescription}
-                      </p>
-                    </div>
-                    <div className="p-3 bg-slate-50 rounded border border-slate-200 space-y-1">
-                      <span className="text-[10px] font-bold uppercase text-slate-500 block">Requested Change:</span>
-                      <p className="text-slate-800 leading-relaxed text-xs">
-                        {item.scr?.requestedChange?.join(' ') || item.title}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 2: Business Justification */}
-                <div className="p-4 border-b border-slate-200 space-y-2">
-                  <div className="text-xs font-bold text-slate-900 uppercase tracking-wide bg-slate-100 px-2 py-1 rounded">
-                    2. Business Justification / Impact of Not Doing
-                  </div>
-                  <div className="p-3 bg-blue-50/50 rounded border border-blue-100 text-slate-800 leading-relaxed text-xs">
-                    {item.scr?.businessReasons?.join(' ') || item.sdlc.ideation.businessJustification}
-                  </div>
-                </div>
-
-                {/* Section 3: Business Requirements */}
-                <div className="p-4 border-b border-slate-200 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs font-bold text-slate-900 uppercase tracking-wide bg-slate-100 px-2 py-1 rounded">
-                      3. Business Requirements ({item.scr?.businessRequirements?.length || 0})
-                    </div>
-                  </div>
-
-                  <div className="border border-slate-200 rounded overflow-hidden">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-100 text-slate-700 font-bold text-[11px]">
-                        <tr>
-                          <th className="py-1.5 px-3 w-20">Req #</th>
-                          <th className="py-1.5 px-3">Description</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {(item.scr?.businessRequirements || []).map((br, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50">
-                            <td className="py-2 px-3 font-mono font-bold text-blue-700">{br.no}</td>
-                            <td className="py-2 px-3 text-slate-800 leading-relaxed">{br.description}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Add Requirement inline */}
-                  <div className="flex items-center gap-2 pt-1">
-                    <input
-                      type="text"
-                      placeholder="BR-04"
-                      value={newReqNumber}
-                      onChange={(e) => setNewReqNumber(e.target.value)}
-                      className="w-24 px-2 py-1 border border-slate-300 rounded font-mono text-xs"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Enter new business requirement specification..."
-                      value={newReqDesc}
-                      onChange={(e) => setNewReqDesc(e.target.value)}
-                      className="flex-1 px-2 py-1 border border-slate-300 rounded text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!newReqDesc.trim()) return;
-                        addSCRBusinessRequirement(item.id, {
-                          no: newReqNumber.trim() || `BR-0${(item.scr?.businessRequirements?.length || 0) + 1}`,
-                          description: newReqDesc.trim(),
-                        });
-                        setNewReqNumber('');
-                        setNewReqDesc('');
-                      }}
-                      className="px-3 py-1 bg-slate-800 text-white rounded text-xs font-semibold hover:bg-slate-700 shrink-0"
-                    >
-                      + Add Req
-                    </button>
-                  </div>
-                </div>
-
-                {/* Section 9: Signatures Matrix from Official PDF */}
-                <div className="p-4 space-y-3">
-                  <div className="text-xs font-bold text-slate-900 uppercase tracking-wide bg-slate-100 px-2 py-1 rounded">
-                    9. Approval & Signatures (Official Uratex Matrix)
-                  </div>
-                  <p className="text-[11px] text-slate-500">
-                    Mandatory multi-level sign-offs matching the attached Uratex change control process.
-                  </p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {(item.scr?.approvers || []).map((appr) => {
-                      const isSigned = appr.signed;
-                      return (
-                        <div
-                          key={appr.id}
-                          className={`p-3 rounded-lg border transition-all ${
-                            isSigned
-                              ? 'bg-emerald-50/70 border-emerald-300'
-                              : 'bg-white border-slate-200'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] font-bold uppercase text-slate-500">
-                              {appr.role}
-                            </span>
-                            {isSigned ? (
-                              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded">
-                                Signed
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-semibold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded">
-                                Pending
-                              </span>
-                            )}
-                          </div>
-                          <div className="font-bold text-slate-900 text-xs">{appr.name}</div>
-                          {isSigned ? (
-                            <div className="pt-2 text-[10px] text-slate-500 font-mono">
-                              <div>Sig: <strong className="text-emerald-900">{appr.signatureText}</strong></div>
-                              <div>Date: {appr.signedDate}</div>
-                            </div>
-                          ) : (
-                            <div className="pt-2">
-                              <button
-                                type="button"
-                                onClick={() => signApprover(item.id, appr.id, currentUser.name)}
-                                className="w-full py-1 px-2 text-[11px] font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded flex items-center justify-center gap-1 shadow-2xs"
-                              >
-                                <PenTool className="w-3 h-3" />
-                                <span>Sign as {currentUser.name.split(' ')[0]}</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* TAB 1: SDLC WORKFLOWS & CHECKLISTS */}
           {activeTab === 'sdlc' && (
             <div className="space-y-6">

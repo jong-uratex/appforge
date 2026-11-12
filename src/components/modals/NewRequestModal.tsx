@@ -79,10 +79,10 @@ export const NewRequestModal: React.FC = () => {
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 tracking-wide uppercase">
-                System Change Request Form (SCR Intake)
+                Create Project Initiative
               </h3>
               <p className="text-[11px] text-slate-500">
-                Uratex Philippines SDLC · Requester: <strong className="text-slate-800">{currentUser.name}</strong> ({currentUser.role})
+                MIS AppForge · Requester: <strong className="text-slate-800">{currentUser.name}</strong> ({currentUser.role})
               </p>
             </div>
           </div>
@@ -315,7 +315,7 @@ export const NewRequestModal: React.FC = () => {
               type="submit"
               className="px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm active:scale-95 transition-all flex items-center gap-1.5"
             >
-              <span>Submit System Change Request (SCR)</span>
+              <span>Create Project Initiative</span>
             </button>
           </div>
 

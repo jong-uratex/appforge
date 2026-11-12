@@ -36,14 +36,11 @@ const STORAGE_AUTH_USER_KEY = 'URATEX_MIS_APPFORGE_CURRENT_USER_V2';
 const STORAGE_ACTIVITIES_KEY = 'URATEX_MIS_APPFORGE_ACTIVITIES_V2';
 
 export type AppViewMode =
+  | 'dashboard'
   | 'board'
   | 'kanban'
-  | 'timeline'
   | 'tasks'
-  | 'dashboard'
-  | 'sdlc-matrix'
-  | 'workflows'
-  | 'scr-document';
+  | 'timeline';
 
 interface AppForgeContextType {
   // Requests
