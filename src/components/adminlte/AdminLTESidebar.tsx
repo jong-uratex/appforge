@@ -92,7 +92,7 @@ export const AdminLTESidebar: React.FC<AdminLTESidebarProps> = ({
                   MIS <span className="font-light text-gray-300">AppForge</span>
                 </span>
                 <span className="text-[10px] text-gray-400 block tracking-wider uppercase font-medium">
-                  Uratex Philippines
+                  App Request System
                 </span>
               </div>
             )}
