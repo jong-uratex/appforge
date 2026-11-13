@@ -9,7 +9,7 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "uratex-appforge-db"
-database_id = "your-d1-database-id-here"
+database_id = "3028f72f-adb0-4ff5-9e82-820ee707c97c"
 migrations_dir = "migrations"
 
 [vars]

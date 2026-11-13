@@ -275,7 +275,7 @@ export const CloudflareDeployModal: React.FC = () => {
 
   // User-customizable Wrangler D1 metadata
   const [dbName, setDbName] = useState('uratex-appforge-db');
-  const [dbId, setDbId] = useState('your-d1-database-id-here');
+  const [dbId, setDbId] = useState('3028f72f-adb0-4ff5-9e82-820ee707c97c');
 
   if (!isCloudflareModalOpen) return null;
 
@@ -289,7 +289,7 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "${dbName.trim() || 'uratex-appforge-db'}"
-database_id = "${dbId.trim() || 'your-d1-database-id-here'}"
+database_id = "${dbId.trim() || '3028f72f-adb0-4ff5-9e82-820ee707c97c'}"
 migrations_dir = "migrations"
 
 [vars]
