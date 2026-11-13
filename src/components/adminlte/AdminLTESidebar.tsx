@@ -10,7 +10,6 @@ import {
   Activity,
   Cloud,
   Shield,
-  Layers,
   ChevronRight,
   LogOut,
 } from 'lucide-react';
@@ -83,8 +82,12 @@ export const AdminLTESidebar: React.FC<AdminLTESidebarProps> = ({
             onClick={() => handleNavClick('dashboard')}
             className="flex items-center gap-3 text-left w-full overflow-hidden"
           >
-            <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white shrink-0 font-bold shadow-xs">
-              <Layers className="w-4 h-4" />
+            <div className="w-8 h-8 rounded bg-white flex items-center justify-center shrink-0 shadow-xs overflow-hidden p-0.5">
+              <img
+                src="/assets/aistudio/app-forge-logo_d7a261fb.png"
+                alt="MIS AppForge Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
             {!isSidebarCollapsed && (
               <div className="truncate">

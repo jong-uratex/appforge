@@ -4,7 +4,6 @@ import {
   Mail,
   Eye,
   EyeOff,
-  Layers,
   AlertCircle,
   Cloud,
   ArrowRight,
@@ -45,9 +44,13 @@ export const AdminLTELoginPage: React.FC = () => {
       
       {/* AdminLTE login-logo */}
       <div className="mb-4 text-center">
-        <div className="inline-flex items-center justify-center gap-2 mb-1.5">
-          <div className="w-10 h-10 rounded bg-blue-600 text-white flex items-center justify-center font-bold shadow-xs">
-            <Layers className="w-6 h-6" />
+        <div className="inline-flex items-center justify-center gap-2.5 mb-1.5">
+          <div className="w-11 h-11 rounded-lg bg-white border border-gray-200 flex items-center justify-center shadow-xs overflow-hidden p-1">
+            <img
+              src="/assets/aistudio/app-forge-logo_d7a261fb.png"
+              alt="MIS AppForge Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
           <span className="text-2xl sm:text-3xl font-extrabold text-gray-800 tracking-tight">
             MIS <span className="font-light text-gray-600">AppForge</span>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppForge } from '../../context/AppForgeContext';
 import { Department, RequestType, UrgencyLevel } from '../../types/appforge';
-import { X, Sparkles, AlertCircle, Layers, GitFork } from 'lucide-react';
+import { X, Sparkles, AlertCircle, GitFork } from 'lucide-react';
 
 const DEPARTMENTS: Department[] = [
   'Foam Plant & Production',
@@ -74,8 +74,12 @@ export const NewRequestModal: React.FC = () => {
         {/* Header (Matches PDF: SYSTEM CHANGE REQUEST FORM) */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-700 text-white flex items-center justify-center font-bold">
-              <Layers className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden p-0.5 shadow-2xs">
+              <img
+                src="/assets/aistudio/app-forge-logo_d7a261fb.png"
+                alt="MIS AppForge Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 tracking-wide uppercase">
