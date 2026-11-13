@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAppForge } from '../../context/AppForgeContext';
-import { Department, UserRole } from '../../types/appforge';
 import {
   Mail,
   Eye,
@@ -9,37 +8,17 @@ import {
   AlertCircle,
   Cloud,
   ArrowRight,
-  UserPlus,
+  Lock,
 } from 'lucide-react';
 
-const DEPARTMENTS: Department[] = [
-  'Management Information Systems (MIS)',
-  'Foam Plant & Production',
-  'Sales & Logistics',
-  'Supply Chain & Procurement',
-  'Automotive & Plastics Division',
-  'Human Resources & Admin',
-  'Finance & Accounting',
-  'Quality Assurance & R&D',
-];
-
 export const AdminLTELoginPage: React.FC = () => {
-  const { loginUser, registerUser } = useAppForge();
+  const { loginUser } = useAppForge();
 
-  const [mode, setMode] = useState<'signin' | 'register'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Registration form state
-  const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPassword, setRegPassword] = useState('');
-  const [regRole, setRegRole] = useState<UserRole>('Team Member');
-  const [regDept, setRegDept] = useState<Department>('Management Information Systems (MIS)');
-  const [regTitle, setRegTitle] = useState('');
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,38 +35,8 @@ export const AdminLTELoginPage: React.FC = () => {
 
     if (!res.success) {
       setErrorMessage(
-        res.error || 'No account found with that email address. Please verify your credentials or register a new account.'
+        res.error || 'No account found with that email address. Please verify your corporate credentials.'
       );
-    }
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
-
-    if (!regName.trim() || !regEmail.trim()) {
-      setErrorMessage('Please fill in your name and corporate email address.');
-      return;
-    }
-
-    if (!regEmail.includes('@')) {
-      setErrorMessage('Please provide a valid email address (e.g. name@uratex.com.ph).');
-      return;
-    }
-
-    setIsSubmitting(true);
-    const res = await registerUser({
-      name: regName.trim(),
-      email: regEmail.trim(),
-      password: regPassword || undefined,
-      role: regRole,
-      department: regDept,
-      title: regTitle.trim() || `${regRole} in ${regDept}`,
-    });
-    setIsSubmitting(false);
-
-    if (!res.success) {
-      setErrorMessage(res.error || 'Unable to create account.');
     }
   };
 
@@ -110,38 +59,12 @@ export const AdminLTELoginPage: React.FC = () => {
       </div>
 
       {/* AdminLTE login-box */}
-      <div className="w-full max-w-[440px] bg-white rounded border border-gray-300 shadow-lg border-t-4 border-t-blue-600 overflow-hidden">
+      <div className="w-full max-w-[420px] bg-white rounded border border-gray-300 shadow-lg border-t-4 border-t-blue-600 overflow-hidden">
         
-        {/* Navigation between Sign In and Registration */}
-        <div className="flex border-b border-gray-200 bg-gray-50 text-xs font-semibold text-gray-600">
-          <button
-            type="button"
-            onClick={() => {
-              setMode('signin');
-              setErrorMessage(null);
-            }}
-            className={`flex-1 py-3 px-4 text-center transition-colors border-b-2 ${
-              mode === 'signin'
-                ? 'border-blue-600 text-blue-700 bg-white font-bold'
-                : 'border-transparent hover:text-gray-900 hover:bg-gray-100'
-            }`}
-          >
-            Sign In to Session
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMode('register');
-              setErrorMessage(null);
-            }}
-            className={`flex-1 py-3 px-4 text-center transition-colors border-b-2 ${
-              mode === 'register'
-                ? 'border-blue-600 text-blue-700 bg-white font-bold'
-                : 'border-transparent hover:text-gray-900 hover:bg-gray-100'
-            }`}
-          >
-            Register New Account
-          </button>
+        {/* Header */}
+        <div className="px-6 py-3.5 border-b border-gray-200 bg-gray-50 flex items-center justify-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wider">
+          <Lock className="w-3.5 h-3.5 text-blue-600" />
+          <span>Sign In to Session</span>
         </div>
 
         {/* Card Body */}
@@ -156,175 +79,68 @@ export const AdminLTELoginPage: React.FC = () => {
           )}
 
           {/* SIGN IN FORM */}
-          {mode === 'signin' ? (
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <p className="text-xs text-gray-600 text-center font-medium">
-                Enter your Uratex credentials to access project management and workflow pipelines
-              </p>
+          <form onSubmit={handleSignIn} className="space-y-4">
+            <p className="text-xs text-gray-600 text-center font-medium">
+              Enter your Uratex credentials to access project management and workflow pipelines
+            </p>
 
-              {/* Email Input Group */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Corporate Email
-                </label>
-                <div className="relative rounded border border-gray-300 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 bg-white flex items-center">
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@uratex.com.ph"
-                    className="w-full py-2 px-3 text-xs text-gray-800 focus:outline-none bg-transparent"
-                  />
-                  <div className="px-3 text-gray-400">
-                    <Mail className="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Password Input Group */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Password
-                </label>
-                <div className="relative rounded border border-gray-300 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 bg-white flex items-center">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full py-2 px-3 text-xs text-gray-800 focus:outline-none bg-transparent font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="px-3 text-gray-400 hover:text-gray-600"
-                    title={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Sign In Button */}
-              <div className="flex items-center justify-end pt-1">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-2.5 px-5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs rounded shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60"
-                >
-                  <span>{isSubmitting ? 'Verifying with Cloudflare D1...' : 'Sign In'}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </form>
-          ) : (
-            /* REGISTRATION FORM */
-            <form onSubmit={handleRegister} className="space-y-3.5">
-              <p className="text-xs text-gray-600 text-center font-medium">
-                Create a corporate account stored in Cloudflare D1 to collaborate on initiatives
-              </p>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={regName}
-                  onChange={(e) => setRegName(e.target.value)}
-                  placeholder="e.g. Ramon Bautista"
-                  className="w-full py-2 px-3 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Corporate Email
-                </label>
+            {/* Email Input Group */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Corporate Email
+              </label>
+              <div className="relative rounded border border-gray-300 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 bg-white flex items-center">
                 <input
                   type="email"
                   required
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  placeholder="e.g. r.bautista@uratex.com.ph"
-                  className="w-full py-2 px-3 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@uratex.com.ph"
+                  className="w-full py-2 px-3 text-xs text-gray-800 focus:outline-none bg-transparent"
                 />
+                <div className="px-3 text-gray-400">
+                  <Mail className="w-4 h-4" />
+                </div>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Password
-                </label>
+            {/* Password Input Group */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Password
+              </label>
+              <div className="relative rounded border border-gray-300 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 bg-white flex items-center">
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  placeholder="Create a secure password"
-                  className="w-full py-2 px-3 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full py-2 px-3 text-xs text-gray-800 focus:outline-none bg-transparent font-mono"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="px-3 text-gray-400 hover:text-gray-600"
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    System Role
-                  </label>
-                  <select
-                    value={regRole}
-                    onChange={(e) => setRegRole(e.target.value as UserRole)}
-                    className="w-full py-2 px-2.5 text-xs border border-gray-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-                  >
-                    <option value="Admin">Admin (Full Control)</option>
-                    <option value="Project Manager">Project Manager</option>
-                    <option value="Team Member">Team Member</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Department
-                  </label>
-                  <select
-                    value={regDept}
-                    onChange={(e) => setRegDept(e.target.value as Department)}
-                    className="w-full py-2 px-2 text-xs border border-gray-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    {DEPARTMENTS.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Job Title
-                </label>
-                <input
-                  type="text"
-                  value={regTitle}
-                  onChange={(e) => setRegTitle(e.target.value)}
-                  placeholder="e.g. Logistics Operations Analyst"
-                  className="w-full py-2 px-3 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-
+            {/* Sign In Button */}
+            <div className="flex items-center justify-end pt-1">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer mt-2 disabled:opacity-60"
+                className="w-full py-2.5 px-5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs rounded shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60"
               >
-                <UserPlus className="w-4 h-4" />
-                <span>{isSubmitting ? 'Creating Account...' : 'Create Account & Sign In'}</span>
+                <span>{isSubmitting ? 'Verifying with Cloudflare D1...' : 'Sign In'}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
-            </form>
-          )}
+            </div>
+          </form>
 
         </div>
 
