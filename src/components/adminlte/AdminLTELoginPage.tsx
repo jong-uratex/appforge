@@ -54,7 +54,7 @@ export const AdminLTELoginPage: React.FC = () => {
           </span>
         </div>
         <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold">
-          Uratex Philippines · Multiflex RNC
+          Uratex Internal App Request System
         </p>
       </div>
 
