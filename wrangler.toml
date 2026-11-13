@@ -6,14 +6,18 @@ compatibility_flags = ["nodejs_compat"]
 [site]
 bucket = "./dist"
 
-# Optional Cloudflare D1 Database binding for production SQL persistence
-# Run 'npx wrangler d1 create uratex-appforge-db' to generate your database ID
+# Cloudflare D1 Relational SQLite Database Binding
+# 1. Create database in Cloudflare Dashboard -> Storage & databases -> D1 SQLite Database
+#    or run: npx wrangler d1 create uratex-appforge-db
+# 2. Paste the generated database_id below and run:
+#    npx wrangler d1 migrations apply uratex-appforge-db --remote
 [[d1_databases]]
 binding = "DB"
 database_name = "uratex-appforge-db"
 database_id = "your-d1-database-id-here"
+migrations_dir = "migrations"
 
-# Optional Cloudflare KV for serverless caching & session storage
+# Optional Cloudflare KV for edge read caching
 [[kv_namespaces]]
 binding = "APPFORGE_KV"
 id = "your-kv-namespace-id-here"

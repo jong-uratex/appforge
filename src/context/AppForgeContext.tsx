@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   AppRequest,
   Department,
@@ -27,6 +27,7 @@ import {
   USER_PERSONAS,
   INITIAL_ACTIVITIES,
 } from '../data/seedData';
+import { d1Client, D1AnalyticsReport, D1HealthStatus } from '../services/d1Client';
 
 const STORAGE_REQUESTS_KEY = 'URATEX_MIS_APPFORGE_REQUESTS_V2';
 const STORAGE_WORKFLOWS_KEY = 'URATEX_MIS_APPFORGE_WORKFLOWS_V2';
@@ -186,7 +187,11 @@ interface AppForgeContextType {
   signApprover: (requestId: string, approverId: string, signatureText?: string) => void;
   addSCRBusinessRequirement: (requestId: string, requirement: { no: string; description: string }) => void;
 
-  // Cloudflare export/import
+  // Cloudflare D1 Database & export/import
+  d1Status: D1HealthStatus | null;
+  d1Analytics: D1AnalyticsReport | null;
+  refreshD1Status: () => Promise<void>;
+  syncAllToD1: () => Promise<{ success: boolean; message: string }>;
   exportData: () => string;
   importData: (jsonStr: string) => boolean;
   resetToDefault: () => void;
@@ -279,7 +284,87 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return INITIAL_ACTIVITIES;
   });
 
-  // Sync to local storage
+  // Cloudflare D1 live connection & analytics state
+  const [d1Status, setD1Status] = useState<D1HealthStatus | null>(null);
+  const [d1Analytics, setD1Analytics] = useState<D1AnalyticsReport | null>(null);
+  const d1ConnectedRef = useRef(false);
+
+  const refreshD1Status = async () => {
+    const health = await d1Client.checkHealth();
+    setD1Status(health);
+    d1ConnectedRef.current = Boolean(health.connected && health.schemaReady);
+    if (health.connected && health.schemaReady) {
+      const report = await d1Client.fetchAnalytics();
+      if (report) setD1Analytics(report);
+    }
+  };
+
+  const syncAllToD1 = async (): Promise<{ success: boolean; message: string }> => {
+    const res = await d1Client.pushAllToD1({
+      users,
+      workflows,
+      requests,
+      tasks,
+      activities,
+    });
+    if (res && res.success) {
+      await refreshD1Status();
+      return {
+        success: true,
+        message: `Synced ${res.synced?.requests ?? requests.length} requests, ${res.synced?.tasks ?? tasks.length} tasks, and ${res.synced?.users ?? users.length} users to Cloudflare D1.`,
+      };
+    }
+    return {
+      success: false,
+      message: res?.error || 'Cloudflare D1 binding (DB) is not active in this runtime.',
+    };
+  };
+
+  const hasBootstrappedRef = useRef(false);
+
+  // Bootstrap from Cloudflare D1 on initial mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const health = await d1Client.checkHealth();
+      if (!mounted) return;
+      setD1Status(health);
+      d1ConnectedRef.current = Boolean(health.connected && health.schemaReady);
+
+      if (health.connected && health.schemaReady) {
+        const boot = await d1Client.bootstrap();
+        if (!mounted || !boot || !boot.success) {
+          hasBootstrappedRef.current = true;
+          return;
+        }
+
+        if (boot.seeded) {
+          if (boot.users.length > 0) setUsers(boot.users);
+          if (boot.workflows.length > 0) setWorkflows(boot.workflows);
+          if (boot.requests.length > 0) setRequests(boot.requests);
+          if (boot.tasks.length > 0) setTasks(boot.tasks);
+          if (boot.activities.length > 0) setActivities(boot.activities);
+        } else {
+          await d1Client.pushAllToD1({
+            users,
+            workflows,
+            requests,
+            tasks,
+            activities,
+          });
+        }
+
+        const report = await d1Client.fetchAnalytics();
+        if (mounted && report) setD1Analytics(report);
+      }
+      hasBootstrappedRef.current = true;
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Sync to local storage & debounced Cloudflare D1 sync
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_REQUESTS_KEY, JSON.stringify(requests));
@@ -289,7 +374,33 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(currentUser));
       localStorage.setItem(STORAGE_ACTIVITIES_KEY, JSON.stringify(activities));
     } catch {}
+
+    if (!hasBootstrappedRef.current || !d1ConnectedRef.current) return;
+    const timer = setTimeout(() => {
+      void d1Client
+        .pushAllToD1({ users, workflows, requests, tasks, activities })
+        .then(() => d1Client.fetchAnalytics())
+        .then((report) => {
+          if (report) setD1Analytics(report);
+        });
+    }, 600);
+    return () => clearTimeout(timer);
   }, [requests, workflows, tasks, users, currentUser, activities]);
+
+  // Track navigation analytics in Cloudflare D1
+  useEffect(() => {
+    if (!isAuthenticated || !d1ConnectedRef.current) return;
+    void d1Client.logEventOrActivity({
+      eventType: 'page_view',
+      userId: currentUser.id,
+      userRole: currentUser.role,
+      department: currentUser.department,
+      entityType: 'view',
+      entityId: activeView,
+      metricValue: 1,
+      metadata: { view: activeView },
+    });
+  }, [activeView, isAuthenticated]);
 
   // Keep selectedRequest updated when requests change
   useEffect(() => {
@@ -304,7 +415,7 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     ROLE_PERMISSIONS[currentUser.role] || ROLE_PERMISSIONS['Team Member'];
 
   // Auth Functions
-  const loginUser = (email: string, _password?: string): boolean => {
+  const loginUser = (email: string, password?: string): boolean => {
     const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
     if (found) {
       setCurrentUser(found);
@@ -313,6 +424,10 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         localStorage.setItem(STORAGE_IS_AUTH_KEY, 'true');
         localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(found));
       } catch {}
+      // Persist session & login analytics to Cloudflare D1
+      void d1Client.login(found.email, password).then((res) => {
+        if (res?.sessionToken) d1Client.setSessionToken(res.sessionToken);
+      });
       return true;
     }
     return false;
@@ -325,6 +440,9 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       localStorage.setItem(STORAGE_IS_AUTH_KEY, 'true');
       localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(user));
     } catch {}
+    void d1Client.login(user.email).then((res) => {
+      if (res?.sessionToken) d1Client.setSessionToken(res.sessionToken);
+    });
   };
 
   const setActivePersona = (user: UserPersona) => {
@@ -360,6 +478,10 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       localStorage.setItem(STORAGE_IS_AUTH_KEY, 'true');
       localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(newUser));
     } catch {}
+    // Persist new user registration & analytics event to Cloudflare D1
+    void d1Client.register(data).then((res) => {
+      if (res?.sessionToken) d1Client.setSessionToken(res.sessionToken);
+    });
     return newUser;
   };
 
@@ -368,6 +490,7 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       localStorage.removeItem(STORAGE_IS_AUTH_KEY);
     } catch {}
+    void d1Client.logout();
   };
 
   // Activity Logging Function
@@ -399,6 +522,20 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       createdAt: Date.now(),
     };
     setActivities((prev) => [newAct, ...prev]);
+    // Persist activity & analytics event to Cloudflare D1
+    if (d1ConnectedRef.current) {
+      void d1Client.logEventOrActivity({
+        eventType: data.type,
+        userId: newAct.actorId,
+        userRole: newAct.actorRole,
+        department: currentUser.department,
+        entityType: data.type.startsWith('task') ? 'task' : 'request',
+        entityId: data.targetId,
+        metricValue: 1,
+        metadata: { code: data.targetCode, summary: data.actionSummary },
+        activity: newAct,
+      });
+    }
   };
 
   const clearActivities = () => {
@@ -448,6 +585,9 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const deleteWorkflow = (id: string): boolean => {
     if (workflows.length <= 1) return false;
     setWorkflows((prev) => prev.filter((wf) => wf.id !== id));
+    if (d1ConnectedRef.current) {
+      void d1Client.deleteWorkflow(id);
+    }
     return true;
   };
 
@@ -584,6 +724,9 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const deleteTask = (taskId: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    if (d1ConnectedRef.current) {
+      void d1Client.deleteTask(taskId);
+    }
   };
 
   const updateTaskStatus = (taskId: string, status: TaskStatus) => {
@@ -973,6 +1116,9 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setRequests((prev) => prev.filter((r) => r.id !== id));
     if (selectedRequest?.id === id) {
       setSelectedRequest(null);
+    }
+    if (d1ConnectedRef.current) {
+      void d1Client.deleteRequest(id);
     }
   };
 
@@ -1547,6 +1693,10 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateSCRFormData,
         signApprover,
         addSCRBusinessRequirement,
+        d1Status,
+        d1Analytics,
+        refreshD1Status,
+        syncAllToD1,
         exportData,
         importData,
         resetToDefault,
