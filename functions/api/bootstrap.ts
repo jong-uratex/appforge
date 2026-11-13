@@ -157,7 +157,7 @@ export async function onRequestGet(context: PagesContext): Promise<Response> {
     return jsonResponse({
       success: true,
       connected: true,
-      seeded: users.length > 0 && workflows.length > 0,
+      seeded: users.length > 0 && workflows.length > 0 && requests.length > 0,
       users,
       workflows,
       requests,
@@ -310,7 +310,7 @@ export async function onRequestPost(context: PagesContext): Promise<Response> {
         statements.push(
           db
             .prepare(
-              `INSERT INTO subtasks (id, request_id, title, completed, assigned_to, due_date)
+              `INSERT OR REPLACE INTO subtasks (id, request_id, title, completed, assigned_to, due_date)
                VALUES (?, ?, ?, ?, ?, ?)`
             )
             .bind(st.id, req.id, st.title, st.completed ? 1 : 0, st.assignedTo, st.dueDate)
@@ -321,7 +321,7 @@ export async function onRequestPost(context: PagesContext): Promise<Response> {
         statements.push(
           db
             .prepare(
-              `INSERT INTO comments (id, request_id, author_id, author_name, author_avatar, author_role, content, stage_tagged, timestamp_label)
+              `INSERT OR REPLACE INTO comments (id, request_id, author_id, author_name, author_avatar, author_role, content, stage_tagged, timestamp_label)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
             )
             .bind(

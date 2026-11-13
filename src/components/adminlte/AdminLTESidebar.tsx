@@ -3,10 +3,8 @@ import { useAppForge, AppViewMode } from '../../context/AppForgeContext';
 import {
   LayoutDashboard,
   Table2,
-  FileText,
   Kanban,
   CheckSquare,
-  ShieldCheck,
   CalendarDays,
   Settings2,
   Activity,
@@ -14,7 +12,6 @@ import {
   Shield,
   Layers,
   ChevronRight,
-  ExternalLink,
   LogOut,
 } from 'lucide-react';
 
@@ -37,8 +34,6 @@ export const AdminLTESidebar: React.FC<AdminLTESidebarProps> = ({
     tasks,
     activities,
     currentUser,
-    permissions,
-    setIsNewRequestModalOpen,
     setIsWorkflowModalOpen,
     setIsCloudflareModalOpen,
     setIsAuthModalOpen,

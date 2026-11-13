@@ -33,15 +33,8 @@ export interface D1Database {
   dump(): Promise<ArrayBuffer>;
 }
 
-export interface KVNamespaceLike {
-  get(key: string): Promise<string | null>;
-  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
-  delete(key: string): Promise<void>;
-}
-
 export interface CloudflareEnv {
   DB?: D1Database;
-  APPFORGE_KV?: KVNamespaceLike;
   ENVIRONMENT?: string;
   ORGANIZATION?: string;
 }

@@ -103,17 +103,26 @@ interface AppForgeContextType {
   users: UserPersona[];
   currentUser: UserPersona;
   permissions: RolePermissions;
-  activePersona: UserPersona; // alias for currentUser
-  setActivePersona: (user: UserPersona) => void;
-  loginUser: (email: string, password?: string) => boolean;
-  loginAsPersona: (user: UserPersona) => void;
+  loginUser: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   registerUser: (data: {
     name: string;
     email: string;
+    password?: string;
     role: UserRole;
     department: Department;
     title: string;
-  }) => UserPersona;
+  }) => Promise<{ success: boolean; user?: UserPersona; error?: string }>;
+  updateUserProfile: (data: {
+    name: string;
+    department: Department;
+    title: string;
+    avatar?: string;
+    role?: UserRole;
+  }) => Promise<{ success: boolean; error?: string }>;
+  changeUserPassword: (
+    currentPassword: string,
+    newPassword: string
+  ) => Promise<{ success: boolean; error?: string }>;
   logoutUser: () => void;
 
   // Views & Filters
@@ -191,10 +200,10 @@ interface AppForgeContextType {
   d1Status: D1HealthStatus | null;
   d1Analytics: D1AnalyticsReport | null;
   refreshD1Status: () => Promise<void>;
+  refreshFromD1: () => Promise<boolean>;
   syncAllToD1: () => Promise<{ success: boolean; message: string }>;
   exportData: () => string;
   importData: (jsonStr: string) => boolean;
-  resetToDefault: () => void;
 }
 
 const AppForgeContext = createContext<AppForgeContextType | undefined>(undefined);
@@ -320,9 +329,21 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   };
 
+  const refreshFromD1 = async (): Promise<boolean> => {
+    const boot = await d1Client.bootstrap();
+    if (!boot || !boot.success) return false;
+    if (boot.users.length > 0) setUsers(boot.users);
+    if (boot.workflows.length > 0) setWorkflows(boot.workflows);
+    if (boot.requests.length > 0) setRequests(boot.requests);
+    if (boot.tasks.length > 0) setTasks(boot.tasks);
+    if (boot.activities.length > 0) setActivities(boot.activities);
+    await refreshD1Status();
+    return true;
+  };
+
   const hasBootstrappedRef = useRef(false);
 
-  // Bootstrap from Cloudflare D1 on initial mount
+  // Bootstrap all workspace data & verify active session from Cloudflare D1 on mount
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -332,6 +353,25 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       d1ConnectedRef.current = Boolean(health.connected && health.schemaReady);
 
       if (health.connected && health.schemaReady) {
+        const savedToken = d1Client.getSessionToken();
+        if (savedToken) {
+          const verified = await d1Client.verifySession(savedToken);
+          if (mounted && verified?.success && verified.valid && verified.user) {
+            setCurrentUser(verified.user);
+            setIsAuthenticated(true);
+            try {
+              localStorage.setItem(STORAGE_IS_AUTH_KEY, 'true');
+              localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(verified.user));
+            } catch {}
+          } else if (mounted && verified && !verified.valid) {
+            d1Client.setSessionToken(null);
+            setIsAuthenticated(false);
+            try {
+              localStorage.removeItem(STORAGE_IS_AUTH_KEY);
+            } catch {}
+          }
+        }
+
         const boot = await d1Client.bootstrap();
         if (!mounted || !boot || !boot.success) {
           hasBootstrappedRef.current = true;
@@ -414,9 +454,38 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const permissions: RolePermissions =
     ROLE_PERMISSIONS[currentUser.role] || ROLE_PERMISSIONS['Team Member'];
 
-  // Auth Functions
-  const loginUser = (email: string, password?: string): boolean => {
-    const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+  // Auth Functions (D1-authoritative when deployed on Cloudflare, local fallback in local Vite dev)
+  const loginUser = async (
+    email: string,
+    password?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (d1ConnectedRef.current) {
+      const res = await d1Client.login(normalizedEmail, password);
+      if (res?.success && res.user) {
+        if (res.sessionToken) d1Client.setSessionToken(res.sessionToken);
+        setCurrentUser(res.user);
+        setUsers((prev) =>
+          prev.some((u) => u.id === res.user!.id) ? prev : [...prev, res.user!]
+        );
+        setIsAuthenticated(true);
+        try {
+          localStorage.setItem(STORAGE_IS_AUTH_KEY, 'true');
+          localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(res.user));
+        } catch {}
+        return { success: true };
+      }
+      if (res) {
+        return {
+          success: false,
+          error: res.error || 'Invalid corporate email or password.',
+        };
+      }
+    }
+
+    // Local preview fallback when Cloudflare Pages Functions are not mounted
+    const found = users.find((u) => u.email.toLowerCase() === normalizedEmail);
     if (found) {
       setCurrentUser(found);
       setIsAuthenticated(true);
@@ -424,38 +493,43 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         localStorage.setItem(STORAGE_IS_AUTH_KEY, 'true');
         localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(found));
       } catch {}
-      // Persist session & login analytics to Cloudflare D1
-      void d1Client.login(found.email, password).then((res) => {
-        if (res?.sessionToken) d1Client.setSessionToken(res.sessionToken);
-      });
-      return true;
+      return { success: true };
     }
-    return false;
+    return {
+      success: false,
+      error: 'No account found with that email address. Please verify your email or register a new account.',
+    };
   };
 
-  const loginAsPersona = (user: UserPersona) => {
-    setCurrentUser(user);
-    setIsAuthenticated(true);
-    try {
-      localStorage.setItem(STORAGE_IS_AUTH_KEY, 'true');
-      localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(user));
-    } catch {}
-    void d1Client.login(user.email).then((res) => {
-      if (res?.sessionToken) d1Client.setSessionToken(res.sessionToken);
-    });
-  };
-
-  const setActivePersona = (user: UserPersona) => {
-    loginAsPersona(user);
-  };
-
-  const registerUser = (data: {
+  const registerUser = async (data: {
     name: string;
     email: string;
+    password?: string;
     role: UserRole;
     department: Department;
     title: string;
-  }): UserPersona => {
+  }): Promise<{ success: boolean; user?: UserPersona; error?: string }> => {
+    if (d1ConnectedRef.current) {
+      const res = await d1Client.register(data);
+      if (res?.success && res.user) {
+        if (res.sessionToken) d1Client.setSessionToken(res.sessionToken);
+        setUsers((prev) => [...prev, res.user!]);
+        setCurrentUser(res.user);
+        setIsAuthenticated(true);
+        try {
+          localStorage.setItem(STORAGE_IS_AUTH_KEY, 'true');
+          localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(res.user));
+        } catch {}
+        return { success: true, user: res.user };
+      }
+      if (res) {
+        return {
+          success: false,
+          error: res.error || 'Unable to register account in Cloudflare D1.',
+        };
+      }
+    }
+
     const newUser: UserPersona = {
       id: `usr-${Date.now()}`,
       name: data.name,
@@ -478,11 +552,93 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       localStorage.setItem(STORAGE_IS_AUTH_KEY, 'true');
       localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(newUser));
     } catch {}
-    // Persist new user registration & analytics event to Cloudflare D1
-    void d1Client.register(data).then((res) => {
-      if (res?.sessionToken) d1Client.setSessionToken(res.sessionToken);
-    });
-    return newUser;
+    return { success: true, user: newUser };
+  };
+
+  const updateUserProfile = async (data: {
+    name: string;
+    department: Department;
+    title: string;
+    avatar?: string;
+    role?: UserRole;
+  }): Promise<{ success: boolean; error?: string }> => {
+    const trimmedName = data.name.trim();
+    if (!trimmedName) {
+      return { success: false, error: 'Full name cannot be empty.' };
+    }
+
+    if (d1ConnectedRef.current) {
+      const res = await d1Client.updateProfile({
+        userId: currentUser.id,
+        name: trimmedName,
+        department: data.department,
+        title: data.title.trim() || currentUser.title,
+        avatar: data.avatar !== undefined ? data.avatar.trim() : currentUser.avatar,
+        role: currentUser.role === 'Admin' ? data.role : undefined,
+      });
+
+      if (res?.success && res.user) {
+        setCurrentUser(res.user);
+        setUsers((prev) => prev.map((u) => (u.id === res.user!.id ? res.user! : u)));
+        try {
+          localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(res.user));
+        } catch {}
+        return { success: true };
+      }
+
+      if (res) {
+        return { success: false, error: res.error || 'Failed to update profile in Cloudflare D1.' };
+      }
+    }
+
+    // Local preview fallback
+    const nextRole = currentUser.role === 'Admin' && data.role ? data.role : currentUser.role;
+    const updatedUser: UserPersona = {
+      ...currentUser,
+      name: trimmedName,
+      department: data.department,
+      title: data.title.trim() || currentUser.title,
+      avatar: data.avatar !== undefined ? data.avatar.trim() : currentUser.avatar,
+      role: nextRole,
+      isManager: nextRole === 'Admin' || nextRole === 'Project Manager',
+      isITLead: nextRole === 'Admin',
+      isDeveloper: nextRole === 'Team Member',
+    };
+
+    setCurrentUser(updatedUser);
+    setUsers((prev) => prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
+    try {
+      localStorage.setItem(STORAGE_AUTH_USER_KEY, JSON.stringify(updatedUser));
+    } catch {}
+    return { success: true };
+  };
+
+  const changeUserPassword = async (
+    currentPassword: string,
+    newPassword: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!currentPassword || !newPassword) {
+      return { success: false, error: 'Please enter both your current password and a new password.' };
+    }
+    if (newPassword.length < 6) {
+      return { success: false, error: 'New password must be at least 6 characters long.' };
+    }
+
+    if (d1ConnectedRef.current) {
+      const res = await d1Client.changePassword({
+        userId: currentUser.id,
+        currentPassword,
+        newPassword,
+      });
+      if (res?.success) {
+        return { success: true };
+      }
+      if (res) {
+        return { success: false, error: res.error || 'Unable to change password.' };
+      }
+    }
+
+    return { success: true };
   };
 
   const logoutUser = () => {
@@ -1600,23 +1756,6 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const resetToDefault = () => {
-    setRequests(INITIAL_REQUESTS);
-    setWorkflows(INITIAL_WORKFLOWS);
-    setTasks(INITIAL_TASKS);
-    setUsers(USER_PERSONAS);
-    setCurrentUser(USER_PERSONAS[0]);
-    setActivities(INITIAL_ACTIVITIES);
-    try {
-      localStorage.removeItem(STORAGE_REQUESTS_KEY);
-      localStorage.removeItem(STORAGE_WORKFLOWS_KEY);
-      localStorage.removeItem(STORAGE_TASKS_KEY);
-      localStorage.removeItem(STORAGE_USERS_KEY);
-      localStorage.removeItem(STORAGE_AUTH_USER_KEY);
-      localStorage.removeItem(STORAGE_ACTIVITIES_KEY);
-    } catch {}
-  };
-
   return (
     <AppForgeContext.Provider
       value={{
@@ -1644,11 +1783,10 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         permissions,
         isAuthenticated,
         setIsAuthenticated,
-        activePersona: currentUser,
-        setActivePersona,
         loginUser,
-        loginAsPersona,
         registerUser,
+        updateUserProfile,
+        changeUserPassword,
         logoutUser,
         activeView,
         setActiveView,
@@ -1696,10 +1834,10 @@ export const AppForgeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         d1Status,
         d1Analytics,
         refreshD1Status,
+        refreshFromD1,
         syncAllToD1,
         exportData,
         importData,
-        resetToDefault,
       }}
     >
       {children}

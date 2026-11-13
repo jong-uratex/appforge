@@ -262,6 +262,7 @@ export const CloudflareDeployModal: React.FC = () => {
     d1Status,
     d1Analytics,
     refreshD1Status,
+    refreshFromD1,
     syncAllToD1,
   } = useAppForge();
 
@@ -340,6 +341,18 @@ ORGANIZATION = "Uratex Philippines"`;
     await refreshD1Status();
     const res = await syncAllToD1();
     setSyncMessage(res.message);
+    setIsSyncing(false);
+  };
+
+  const handleFetchFromD1 = async () => {
+    setIsSyncing(true);
+    setSyncMessage(null);
+    const ok = await refreshFromD1();
+    setSyncMessage(
+      ok
+        ? 'Refreshed live users, workflows, requests, tasks, audit logs & analytics from Cloudflare D1.'
+        : 'Cloudflare D1 API not active in local preview runtime.'
+    );
     setIsSyncing(false);
   };
 
@@ -450,14 +463,24 @@ ORGANIZATION = "Uratex Philippines"`;
                   </div>
                 </div>
 
-                <button
-                  onClick={handleTestAndSync}
-                  disabled={isSyncing}
-                  className="px-3.5 py-2 bg-gray-900 hover:bg-black text-white rounded font-bold text-xs flex items-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-60"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                  <span>{isSyncing ? 'Syncing...' : 'Test & Sync to D1'}</span>
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={handleFetchFromD1}
+                    disabled={isSyncing}
+                    className="px-3 py-2 bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 rounded font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                    <span>Fetch Latest</span>
+                  </button>
+                  <button
+                    onClick={handleTestAndSync}
+                    disabled={isSyncing}
+                    className="px-3.5 py-2 bg-gray-900 hover:bg-black text-white rounded font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                    <span>{isSyncing ? 'Syncing...' : 'Sync to D1'}</span>
+                  </button>
+                </div>
               </div>
 
               {syncMessage && (

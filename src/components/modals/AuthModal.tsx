@@ -1,18 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppForge } from '../../context/AppForgeContext';
 import { Department, UserRole } from '../../types/appforge';
 import {
   X,
-  User,
   Shield,
-  KeyRound,
-  CheckCircle2,
-  Lock,
-  UserCheck,
-  Building2,
-  Briefcase,
   AlertCircle,
+  CheckCircle2,
   LogOut,
+  User,
+  KeyRound,
+  Eye,
+  EyeOff,
+  Save,
 } from 'lucide-react';
 
 const DEPARTMENTS: Department[] = [
@@ -31,57 +30,168 @@ export const AuthModal: React.FC = () => {
     isAuthModalOpen,
     setIsAuthModalOpen,
     currentUser,
-    users,
-    setActivePersona,
     loginUser,
     registerUser,
-    permissions,
+    updateUserProfile,
+    changeUserPassword,
     logoutUser,
   } = useAppForge();
 
-  const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'roles'>('signin');
+  const [authMode, setAuthMode] = useState<'profile' | 'roles' | 'signin' | 'signup'>('profile');
   const [emailInput, setEmailInput] = useState('');
-  const [passwordInput, setPasswordInput] = useState('uratex2026');
+  const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Profile edit state
+  const [profName, setProfName] = useState(currentUser.name);
+  const [profDept, setProfDept] = useState<Department>(currentUser.department);
+  const [profTitle, setProfTitle] = useState(currentUser.title);
+  const [profAvatar, setProfAvatar] = useState(currentUser.avatar);
+  const [profRole, setProfRole] = useState<UserRole>(currentUser.role);
+  const [profileFeedback, setProfileFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Password change state
+  const [currPass, setCurrPass] = useState('');
+  const [newPass, setNewPass] = useState('');
+  const [confirmPass, setConfirmPass] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [passwordFeedback, setPasswordFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Sign up inputs
   const [nameInput, setNameInput] = useState('');
   const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
   const [roleInput, setRoleInput] = useState<UserRole>('Team Member');
   const [deptInput, setDeptInput] = useState<Department>('Foam Plant & Production');
   const [titleInput, setTitleInput] = useState('');
 
+  useEffect(() => {
+    if (isAuthModalOpen) {
+      setProfName(currentUser.name);
+      setProfDept(currentUser.department);
+      setProfTitle(currentUser.title);
+      setProfAvatar(currentUser.avatar);
+      setProfRole(currentUser.role);
+      setProfileFeedback(null);
+      setPasswordFeedback(null);
+      setLoginError(null);
+      setCurrPass('');
+      setNewPass('');
+      setConfirmPass('');
+    }
+  }, [isAuthModalOpen, currentUser]);
+
   if (!isAuthModalOpen) return null;
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    const ok = loginUser(emailInput.trim());
-    if (ok) {
-      setLoginError(null);
-      setIsAuthModalOpen(false);
+    setProfileFeedback(null);
+    setIsSavingProfile(true);
+    const res = await updateUserProfile({
+      name: profName,
+      department: profDept,
+      title: profTitle,
+      avatar: profAvatar,
+      role: currentUser.role === 'Admin' ? profRole : undefined,
+    });
+    setIsSavingProfile(false);
+
+    if (res.success) {
+      setProfileFeedback({
+        type: 'success',
+        text: 'Profile details updated and saved to Cloudflare D1.',
+      });
     } else {
-      setLoginError('No user account found with that email. Try one of the demo users below.');
+      setProfileFeedback({
+        type: 'error',
+        text: res.error || 'Failed to update profile details.',
+      });
     }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordFeedback(null);
+
+    if (newPass.length < 6) {
+      setPasswordFeedback({
+        type: 'error',
+        text: 'New password must be at least 6 characters long.',
+      });
+      return;
+    }
+
+    if (newPass !== confirmPass) {
+      setPasswordFeedback({
+        type: 'error',
+        text: 'New password and confirmation password do not match.',
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    const res = await changeUserPassword(currPass, newPass);
+    setIsChangingPassword(false);
+
+    if (res.success) {
+      setCurrPass('');
+      setNewPass('');
+      setConfirmPass('');
+      setPasswordFeedback({
+        type: 'success',
+        text: 'Password updated successfully in Cloudflare D1.',
+      });
+    } else {
+      setPasswordFeedback({
+        type: 'error',
+        text: res.error || 'Failed to update password.',
+      });
+    }
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    setIsSubmitting(true);
+    const res = await loginUser(emailInput.trim(), passwordInput);
+    setIsSubmitting(false);
+
+    if (res.success) {
+      setIsAuthModalOpen(false);
+    } else {
+      setLoginError(res.error || 'Invalid corporate email or password.');
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nameInput.trim() || !regEmail.trim()) return;
+    setLoginError(null);
+    setIsSubmitting(true);
 
-    registerUser({
+    const res = await registerUser({
       name: nameInput.trim(),
       email: regEmail.trim(),
+      password: regPassword || undefined,
       role: roleInput,
       department: deptInput,
       title: titleInput.trim() || `${roleInput} in ${deptInput}`,
     });
+    setIsSubmitting(false);
 
-    setIsAuthModalOpen(false);
+    if (res.success) {
+      setIsAuthModalOpen(false);
+    } else {
+      setLoginError(res.error || 'Unable to register account.');
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
@@ -91,10 +201,10 @@ export const AuthModal: React.FC = () => {
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900">
-                Uratex Authentication & Role-Based Access
+                Profile, Password & Role-Based Access (RBAC)
               </h3>
               <p className="text-[11px] text-slate-500">
-                Current active user: <strong className="text-slate-800">{currentUser.name}</strong> ({currentUser.role})
+                Active user: <strong className="text-slate-800">{currentUser.name}</strong> ({currentUser.role})
               </p>
             </div>
           </div>
@@ -107,30 +217,20 @@ export const AuthModal: React.FC = () => {
         </div>
 
         {/* Tab Selector */}
-        <div className="flex items-center gap-1 px-6 border-b border-slate-200 bg-white text-xs font-semibold text-slate-600">
+        <div className="flex items-center gap-1 px-6 border-b border-slate-200 bg-white text-xs font-semibold text-slate-600 overflow-x-auto">
           <button
-            onClick={() => setAuthMode('signin')}
-            className={`py-3 px-3 border-b-2 transition-colors ${
-              authMode === 'signin'
+            onClick={() => setAuthMode('profile')}
+            className={`py-3 px-3 border-b-2 transition-colors shrink-0 ${
+              authMode === 'profile'
                 ? 'border-blue-600 text-blue-700 font-bold'
                 : 'border-transparent hover:text-slate-900'
             }`}
           >
-            Sign In / Switch Account
-          </button>
-          <button
-            onClick={() => setAuthMode('signup')}
-            className={`py-3 px-3 border-b-2 transition-colors ${
-              authMode === 'signup'
-                ? 'border-blue-600 text-blue-700 font-bold'
-                : 'border-transparent hover:text-slate-900'
-            }`}
-          >
-            Register New User
+            My Profile & Password
           </button>
           <button
             onClick={() => setAuthMode('roles')}
-            className={`py-3 px-3 border-b-2 transition-colors ${
+            className={`py-3 px-3 border-b-2 transition-colors shrink-0 ${
               authMode === 'roles'
                 ? 'border-blue-600 text-blue-700 font-bold'
                 : 'border-transparent hover:text-slate-900'
@@ -138,12 +238,258 @@ export const AuthModal: React.FC = () => {
           >
             Role Permission Matrix
           </button>
+          <button
+            onClick={() => {
+              setAuthMode('signin');
+              setLoginError(null);
+            }}
+            className={`py-3 px-3 border-b-2 transition-colors shrink-0 ${
+              authMode === 'signin'
+                ? 'border-blue-600 text-blue-700 font-bold'
+                : 'border-transparent hover:text-slate-900'
+            }`}
+          >
+            Switch Account
+          </button>
+          <button
+            onClick={() => {
+              setAuthMode('signup');
+              setLoginError(null);
+            }}
+            className={`py-3 px-3 border-b-2 transition-colors shrink-0 ${
+              authMode === 'signup'
+                ? 'border-blue-600 text-blue-700 font-bold'
+                : 'border-transparent hover:text-slate-900'
+            }`}
+          >
+            Register New User
+          </button>
         </div>
 
         {/* Tab Content */}
-        <div className="p-6 space-y-4 text-xs text-slate-700">
+        <div className="p-6 space-y-5 text-xs text-slate-700 max-h-[75vh] overflow-y-auto">
           
-          {/* TAB 1: SIGN IN / SWITCH */}
+          {/* TAB 1: MY PROFILE & CHANGE PASSWORD */}
+          {authMode === 'profile' && (
+            <div className="space-y-5">
+              {/* Profile Details Section */}
+              <form onSubmit={handleSaveProfile} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3.5">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                  <div className="flex items-center gap-2 font-bold text-slate-900">
+                    <User className="w-4 h-4 text-blue-600" />
+                    <span>Profile Details</span>
+                  </div>
+                  <span className="text-[11px] font-mono text-slate-500">{currentUser.email}</span>
+                </div>
+
+                {profileFeedback && (
+                  <div
+                    className={`p-2.5 rounded-lg border text-xs flex items-center gap-2 ${
+                      profileFeedback.type === 'success'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        : 'bg-rose-50 border-rose-200 text-rose-700'
+                    }`}
+                  >
+                    {profileFeedback.type === 'success' ? (
+                      <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                    )}
+                    <span>{profileFeedback.text}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3">
+                  <img
+                    src={profAvatar || currentUser.avatar}
+                    alt={profName}
+                    className="w-12 h-12 rounded-full object-cover ring-2 ring-blue-100 shrink-0 bg-white"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="flex-1">
+                    <label className="block font-bold text-slate-800 mb-1">Avatar Image URL</label>
+                    <input
+                      type="url"
+                      value={profAvatar}
+                      onChange={(e) => setProfAvatar(e.target.value)}
+                      placeholder="https://..."
+                      className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={profName}
+                      onChange={(e) => setProfName(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">Job Title</label>
+                    <input
+                      type="text"
+                      required
+                      value={profTitle}
+                      onChange={(e) => setProfTitle(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">Department</label>
+                    <select
+                      value={profDept}
+                      onChange={(e) => setProfDept(e.target.value as Department)}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      {DEPARTMENTS.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">RBAC Role</label>
+                    {currentUser.role === 'Admin' ? (
+                      <select
+                        value={profRole}
+                        onChange={(e) => setProfRole(e.target.value as UserRole)}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="Admin">Admin</option>
+                        <option value="Project Manager">Project Manager</option>
+                        <option value="Team Member">Team Member</option>
+                      </select>
+                    ) : (
+                      <div className="px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-700 font-semibold">
+                        {currentUser.role} (Managed by Admin)
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="submit"
+                    disabled={isSavingProfile}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-xs transition-colors disabled:opacity-60"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{isSavingProfile ? 'Saving Profile...' : 'Save Profile Changes'}</span>
+                  </button>
+                </div>
+              </form>
+
+              {/* Change Password Section */}
+              <form onSubmit={handleChangePassword} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                  <div className="flex items-center gap-2 font-bold text-slate-900">
+                    <KeyRound className="w-4 h-4 text-amber-600" />
+                    <span>Change Password</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords((p) => !p)}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-800"
+                  >
+                    {showPasswords ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    <span>{showPasswords ? 'Hide' : 'Show'}</span>
+                  </button>
+                </div>
+
+                {passwordFeedback && (
+                  <div
+                    className={`p-2.5 rounded-lg border text-xs flex items-center gap-2 ${
+                      passwordFeedback.type === 'success'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        : 'bg-rose-50 border-rose-200 text-rose-700'
+                    }`}
+                  >
+                    {passwordFeedback.type === 'success' ? (
+                      <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                    )}
+                    <span>{passwordFeedback.text}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Current Password</label>
+                  <input
+                    type={showPasswords ? 'text' : 'password'}
+                    required
+                    placeholder="Enter your current password"
+                    value={currPass}
+                    onChange={(e) => setCurrPass(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">New Password (min 6 chars)</label>
+                    <input
+                      type={showPasswords ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      placeholder="New password"
+                      value={newPass}
+                      onChange={(e) => setNewPass(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">Confirm New Password</label>
+                    <input
+                      type={showPasswords ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      placeholder="Confirm new password"
+                      value={confirmPass}
+                      onChange={(e) => setConfirmPass(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logoutUser();
+                      setIsAuthModalOpen(false);
+                    }}
+                    className="px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg flex items-center gap-1.5 transition-colors"
+                  >
+                    <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Sign Out</span>
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isChangingPassword}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg shadow-xs transition-colors disabled:opacity-60"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>{isChangingPassword ? 'Updating...' : 'Update Password'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* TAB 2: SIGN IN / SWITCH */}
           {authMode === 'signin' && (
             <div className="space-y-4">
               <form onSubmit={handleSignIn} className="space-y-3">
@@ -173,6 +519,7 @@ export const AuthModal: React.FC = () => {
                   <input
                     type="password"
                     required
+                    placeholder="••••••••"
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
@@ -181,71 +528,25 @@ export const AuthModal: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-xs transition-colors"
+                  disabled={isSubmitting}
+                  className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-xs transition-colors disabled:opacity-60"
                 >
-                  Sign In with Cloudflare Edge Auth
+                  {isSubmitting ? 'Verifying Credentials...' : 'Sign In with Cloudflare D1 Auth'}
                 </button>
               </form>
 
-              {/* Quick Persona Switcher for Evaluation */}
-              <div className="pt-3 border-t border-slate-100 space-y-2">
-                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  One-Click Persona Login (Demo Accounts)
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {users.map((u) => (
-                    <button
-                      key={u.id}
-                      onClick={() => {
-                        setActivePersona(u);
-                        setIsAuthModalOpen(false);
-                      }}
-                      className={`p-2 rounded-lg border text-left flex items-center gap-2.5 transition-all ${
-                        currentUser.id === u.id
-                          ? 'border-blue-600 bg-blue-50/70 text-blue-900 font-semibold ring-1 ring-blue-500'
-                          : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <img
-                        src={u.avatar}
-                        alt={u.name}
-                        className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-slate-200"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold text-xs truncate">{u.name}</div>
-                        <div className="text-[10px] text-slate-500 flex items-center justify-between">
-                          <span className="truncate">{u.role}</span>
-                          <span
-                            className={`px-1 rounded text-[9px] font-bold ${
-                              u.role === 'Admin'
-                                ? 'bg-purple-100 text-purple-800'
-                                : u.role === 'Project Manager'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-slate-100 text-slate-600'
-                            }`}
-                          >
-                            {u.role}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="pt-3 border-t border-slate-100 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      logoutUser();
-                      setIsAuthModalOpen(false);
-                    }}
-                    className="px-3.5 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg flex items-center gap-1.5 transition-colors"
-                  >
-                    <LogOut className="w-3.5 h-3.5 text-rose-600" />
-                    <span>Log Out (Lock Session)</span>
-                  </button>
-                </div>
+              <div className="pt-3 border-t border-slate-100 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    logoutUser();
+                    setIsAuthModalOpen(false);
+                  }}
+                  className="px-3.5 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg flex items-center gap-1.5 transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Log Out (Lock Session)</span>
+                </button>
               </div>
             </div>
           )}
@@ -253,6 +554,13 @@ export const AuthModal: React.FC = () => {
           {/* TAB 2: SIGN UP */}
           {authMode === 'signup' && (
             <form onSubmit={handleSignUp} className="space-y-3">
+              {loginError && (
+                <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{loginError}</span>
+                </div>
+              )}
+
               <div>
                 <label className="block font-bold text-slate-800 mb-1">Full Name</label>
                 <input
@@ -274,6 +582,18 @@ export const AuthModal: React.FC = () => {
                   value={regEmail}
                   onChange={(e) => setRegEmail(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">Password</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Create password"
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
                 />
               </div>
 
@@ -320,9 +640,10 @@ export const AuthModal: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-xs transition-colors mt-2"
+                disabled={isSubmitting}
+                className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-xs transition-colors mt-2 disabled:opacity-60"
               >
-                Create Account & Sign In
+                {isSubmitting ? 'Saving to Cloudflare D1...' : 'Create Account & Sign In'}
               </button>
             </form>
           )}

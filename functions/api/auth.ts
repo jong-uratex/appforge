@@ -77,13 +77,16 @@ export async function onRequestPost(context: PagesContext): Promise<Response> {
 
   try {
     const body = (await context.request.json()) as {
-      action: 'login' | 'register' | 'logout' | 'verify';
+      action: 'login' | 'register' | 'logout' | 'verify' | 'update_profile' | 'change_password';
       email?: string;
       password?: string;
+      currentPassword?: string;
+      newPassword?: string;
       name?: string;
       role?: 'Admin' | 'Project Manager' | 'Team Member';
       department?: string;
       title?: string;
+      avatar?: string;
       token?: string;
       userId?: string;
     };
@@ -265,6 +268,164 @@ export async function onRequestPost(context: PagesContext): Promise<Response> {
         valid: true,
         user: mapUserRow(sess),
       });
+    }
+
+    if (body.action === 'update_profile') {
+      let targetUserId = body.userId;
+
+      if (body.token) {
+        const tokenHash = await sha256Hex(body.token);
+        const sess = await db
+          .prepare(
+            `SELECT user_id FROM user_sessions WHERE token_hash = ? AND expires_at > datetime('now')`
+          )
+          .bind(tokenHash)
+          .first<{ user_id: string }>();
+        if (sess?.user_id && !targetUserId) {
+          targetUserId = sess.user_id;
+        }
+      }
+
+      if (!targetUserId) {
+        return jsonResponse({ success: false, error: 'User ID is required to update profile.' }, 400);
+      }
+
+      const existing = await db
+        .prepare(`SELECT * FROM users WHERE id = ? AND is_active = 1`)
+        .bind(targetUserId)
+        .first<D1UserRow>();
+
+      if (!existing) {
+        return jsonResponse({ success: false, error: 'User account not found in Cloudflare D1.' }, 404);
+      }
+
+      const nextName = (body.name || existing.name).trim();
+      const nextDept = (body.department || existing.department).trim();
+      const nextTitle = (body.title || existing.title).trim();
+      const nextAvatar = body.avatar !== undefined ? body.avatar.trim() : existing.avatar;
+
+      // Only allow role updates if the existing user is an Admin (prevents privilege escalation)
+      const nextRole =
+        body.role && existing.role === 'Admin' ? body.role : existing.role;
+      const isManager = nextRole === 'Admin' || nextRole === 'Project Manager' ? 1 : 0;
+      const isItLead = nextRole === 'Admin' ? 1 : 0;
+      const isDev = nextRole === 'Team Member' ? 1 : 0;
+
+      if (!nextName) {
+        return jsonResponse({ success: false, error: 'Full name cannot be empty.' }, 400);
+      }
+
+      await db.batch([
+        db
+          .prepare(
+            `UPDATE users
+             SET name = ?, role = ?, department = ?, title = ?, avatar = ?,
+                 is_manager = ?, is_it_lead = ?, is_developer = ?, updated_at = datetime('now')
+             WHERE id = ?`
+          )
+          .bind(
+            nextName,
+            nextRole,
+            nextDept,
+            nextTitle,
+            nextAvatar,
+            isManager,
+            isItLead,
+            isDev,
+            existing.id
+          ),
+        db
+          .prepare(
+            `INSERT INTO analytics_events (id, event_type, user_id, user_role, department, entity_type, entity_id, metric_value, metadata_json)
+             VALUES (?, 'profile_updated', ?, ?, ?, 'user', ?, 1, ?)`
+          )
+          .bind(
+            generateId('evt'),
+            existing.id,
+            nextRole,
+            nextDept,
+            existing.id,
+            JSON.stringify({ name: nextName, department: nextDept, title: nextTitle })
+          ),
+      ]);
+
+      const updated = await db
+        .prepare(`SELECT * FROM users WHERE id = ?`)
+        .bind(existing.id)
+        .first<D1UserRow>();
+
+      return jsonResponse({
+        success: true,
+        user: updated ? mapUserRow(updated) : mapUserRow(existing),
+      });
+    }
+
+    if (body.action === 'change_password') {
+      let targetUserId = body.userId;
+
+      if (body.token && !targetUserId) {
+        const tokenHash = await sha256Hex(body.token);
+        const sess = await db
+          .prepare(
+            `SELECT user_id FROM user_sessions WHERE token_hash = ? AND expires_at > datetime('now')`
+          )
+          .bind(tokenHash)
+          .first<{ user_id: string }>();
+        if (sess?.user_id) targetUserId = sess.user_id;
+      }
+
+      if (!targetUserId || !body.currentPassword || !body.newPassword) {
+        return jsonResponse(
+          { success: false, error: 'Current password and new password are required.' },
+          400
+        );
+      }
+
+      if (body.newPassword.length < 6) {
+        return jsonResponse(
+          { success: false, error: 'New password must be at least 6 characters long.' },
+          400
+        );
+      }
+
+      const existing = await db
+        .prepare(`SELECT * FROM users WHERE id = ? AND is_active = 1`)
+        .bind(targetUserId)
+        .first<D1UserRow>();
+
+      if (!existing) {
+        return jsonResponse({ success: false, error: 'User account not found in Cloudflare D1.' }, 404);
+      }
+
+      const currentHash = await sha256Hex(body.currentPassword);
+      if (existing.password_hash && existing.password_hash !== currentHash) {
+        return jsonResponse(
+          { success: false, error: 'Current password is incorrect.' },
+          401
+        );
+      }
+
+      const newHash = await sha256Hex(body.newPassword);
+      await db.batch([
+        db
+          .prepare(`UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?`)
+          .bind(newHash, existing.id),
+        db
+          .prepare(
+            `INSERT INTO analytics_events (id, event_type, user_id, user_role, department, entity_type, entity_id, metric_value, metadata_json)
+             VALUES (?, 'password_changed', ?, ?, ?, 'user', ?, 1, ?)`
+          )
+          .bind(
+            generateId('evt'),
+            existing.id,
+            existing.role,
+            existing.department,
+            existing.id,
+            JSON.stringify({ email: existing.email })
+          ),
+      ]);
+
+      return jsonResponse({ success: true });
     }
 
     return jsonResponse({ success: false, error: 'Unsupported auth action' }, 400);

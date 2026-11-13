@@ -204,6 +204,51 @@ export const d1Client = {
     });
   },
 
+  async verifySession(token: string) {
+    return safeJsonFetch<{
+      success: boolean;
+      valid?: boolean;
+      user?: UserPersona;
+    }>('/api/auth', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'verify', token }),
+    });
+  },
+
+  async updateProfile(data: {
+    userId: string;
+    name: string;
+    department: Department;
+    title: string;
+    avatar?: string;
+    role?: UserRole;
+  }) {
+    const token = this.getSessionToken();
+    return safeJsonFetch<{
+      success: boolean;
+      user?: UserPersona;
+      error?: string;
+    }>('/api/auth', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'update_profile', token, ...data }),
+    });
+  },
+
+  async changePassword(data: {
+    userId: string;
+    currentPassword: string;
+    newPassword: string;
+  }) {
+    const token = this.getSessionToken();
+    return safeJsonFetch<{
+      success: boolean;
+      error?: string;
+    }>('/api/auth', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'change_password', token, ...data }),
+    });
+  },
+
   async logout() {
     const token = this.getSessionToken();
     this.setSessionToken(null);

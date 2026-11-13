@@ -30,17 +30,18 @@ export const AdminLTELoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Registration form state
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
   const [regRole, setRegRole] = useState<UserRole>('Team Member');
   const [regDept, setRegDept] = useState<Department>('Management Information Systems (MIS)');
   const [regTitle, setRegTitle] = useState('');
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -49,15 +50,18 @@ export const AdminLTELoginPage: React.FC = () => {
       return;
     }
 
-    const success = loginUser(email.trim(), password);
-    if (!success) {
+    setIsSubmitting(true);
+    const res = await loginUser(email.trim(), password);
+    setIsSubmitting(false);
+
+    if (!res.success) {
       setErrorMessage(
-        'No account found with that email address. Please verify your email or register a new account.'
+        res.error || 'No account found with that email address. Please verify your credentials or register a new account.'
       );
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -71,13 +75,20 @@ export const AdminLTELoginPage: React.FC = () => {
       return;
     }
 
-    registerUser({
+    setIsSubmitting(true);
+    const res = await registerUser({
       name: regName.trim(),
       email: regEmail.trim(),
+      password: regPassword || undefined,
       role: regRole,
       department: regDept,
       title: regTitle.trim() || `${regRole} in ${regDept}`,
     });
+    setIsSubmitting(false);
+
+    if (!res.success) {
+      setErrorMessage(res.error || 'Unable to create account.');
+    }
   };
 
   return (
@@ -173,14 +184,9 @@ export const AdminLTELoginPage: React.FC = () => {
 
               {/* Password Input Group */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-gray-700">
-                    Password
-                  </label>
-                  <span className="text-[11px] text-gray-400 font-mono">
-                    Default: uratex2026
-                  </span>
-                </div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Password
+                </label>
                 <div className="relative rounded border border-gray-300 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 bg-white flex items-center">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -201,23 +207,14 @@ export const AdminLTELoginPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Remember Me & Sign In Button */}
-              <div className="flex items-center justify-between pt-1">
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-600">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
-                  />
-                  <span>Remember Me</span>
-                </label>
-
+              {/* Sign In Button */}
+              <div className="flex items-center justify-end pt-1">
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs rounded shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                  disabled={isSubmitting}
+                  className="w-full py-2.5 px-5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs rounded shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60"
                 >
-                  <span>Sign In</span>
+                  <span>{isSubmitting ? 'Verifying with Cloudflare D1...' : 'Sign In'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -226,7 +223,7 @@ export const AdminLTELoginPage: React.FC = () => {
             /* REGISTRATION FORM */
             <form onSubmit={handleRegister} className="space-y-3.5">
               <p className="text-xs text-gray-600 text-center font-medium">
-                Create a corporate account to submit initiatives and collaborate on tasks
+                Create a corporate account stored in Cloudflare D1 to collaborate on initiatives
               </p>
 
               <div>
@@ -254,6 +251,20 @@ export const AdminLTELoginPage: React.FC = () => {
                   onChange={(e) => setRegEmail(e.target.value)}
                   placeholder="e.g. r.bautista@uratex.com.ph"
                   className="w-full py-2 px-3 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  placeholder="Create a secure password"
+                  className="w-full py-2 px-3 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
                 />
               </div>
 
@@ -306,10 +317,11 @@ export const AdminLTELoginPage: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer mt-2"
+                disabled={isSubmitting}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer mt-2 disabled:opacity-60"
               >
                 <UserPlus className="w-4 h-4" />
-                <span>Create Account & Sign In</span>
+                <span>{isSubmitting ? 'Creating Account...' : 'Create Account & Sign In'}</span>
               </button>
             </form>
           )}

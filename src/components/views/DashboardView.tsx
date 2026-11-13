@@ -1,24 +1,17 @@
 import React from 'react';
 import { useAppForge } from '../../context/AppForgeContext';
 import {
-  TrendingUp,
-  CheckCircle2,
-  Clock,
-  ShieldCheck,
-  AlertTriangle,
-  Zap,
   BarChart,
   Users,
   Activity,
-  Layers,
   ListTodo,
   ArrowRight,
   GitFork,
   FileText,
   Plus,
   Table2,
-  ArrowUpRight,
   Code2,
+  Database,
 } from 'lucide-react';
 
 export const DashboardView: React.FC = () => {
@@ -29,32 +22,31 @@ export const DashboardView: React.FC = () => {
     setSelectedRequest,
     setActiveView,
     setIsNewRequestModalOpen,
-    setIsNewTaskModalOpen,
     workflows,
     activities,
     setIsActivitySidebarOpen,
     setIsWorkflowModalOpen,
+    setIsCloudflareModalOpen,
+    d1Status,
+    d1Analytics,
   } = useAppForge();
 
-  // Metrics computation
-  const total = requests.length;
+  // Metrics computation (derived from hydrated D1 data + live D1 SQL view rollups)
+  const total = d1Analytics?.summary?.totalRequests ?? requests.length;
   const inDev = requests.filter((r) => r.currentSDLCStage === 5).length;
   const inTesting = requests.filter((r) => r.currentSDLCStage === 6).length;
-  const inProduction = requests.filter((r) => r.currentSDLCStage >= 8).length;
 
-  const totalEffort = requests.reduce(
-    (acc, r) => acc + (r.sdlc.planning.effortEstimateDays || 0),
-    0
-  );
-  const totalHoursSaved = requests.reduce(
-    (acc, r) => acc + (r.sdlc.evaluation.hoursSavedPerWeek || 0),
-    0
-  );
+  const totalEffort =
+    d1Analytics?.summary?.totalEffortDays ??
+    requests.reduce((acc, r) => acc + (r.sdlc.planning.effortEstimateDays || 0), 0);
+  const totalHoursSaved =
+    d1Analytics?.summary?.totalHoursSavedPerWeek ??
+    requests.reduce((acc, r) => acc + (r.sdlc.evaluation.hoursSavedPerWeek || 0), 0);
 
   // Task metrics
-  const totalTasks = tasks.length;
-  const doneTasks = tasks.filter((t) => t.status === 'Done').length;
-  const inProgressTasks = tasks.filter((t) => t.status === 'In Progress').length;
+  const totalTasks = d1Analytics?.summary?.totalTasks ?? tasks.length;
+  const doneTasks =
+    d1Analytics?.summary?.completedTasks ?? tasks.filter((t) => t.status === 'Done').length;
   const taskCompletionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
   // Department counts
@@ -62,21 +54,6 @@ export const DashboardView: React.FC = () => {
   requests.forEach((r) => {
     departmentCounts[r.department] = (departmentCounts[r.department] || 0) + 1;
   });
-
-  // Gate compliance
-  const requestsInDevOrBeyond = requests.filter(
-    (r) => r.currentSDLCStage >= 5 && r.type !== 'Quick Win'
-  );
-  const gateCompliant = requestsInDevOrBeyond.filter(
-    (r) =>
-      r.sdlc.requirements.requesterSignedOff &&
-      r.sdlc.requirements.analystSignedOff &&
-      r.sdlc.design.designApproved
-  ).length;
-  const gateScore =
-    requestsInDevOrBeyond.length > 0
-      ? Math.round((gateCompliant / requestsInDevOrBeyond.length) * 100)
-      : 100;
 
   return (
     <div className="p-4 sm:p-6 space-y-5 max-w-[1600px] mx-auto">
@@ -322,9 +299,19 @@ export const DashboardView: React.FC = () => {
         </div>
 
         {/* Card Footer */}
-        <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 flex items-center justify-between">
+        <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 flex flex-wrap items-center justify-between gap-2">
           <span>Showing all active change initiatives</span>
-          <span className="font-mono text-[11px]">Audit trail synchronized</span>
+          <button
+            onClick={() => setIsCloudflareModalOpen(true)}
+            className="inline-flex items-center gap-1.5 font-mono text-[11px] hover:text-blue-700"
+          >
+            <Database className={`w-3.5 h-3.5 ${d1Status?.connected && d1Status?.schemaReady ? 'text-emerald-600' : 'text-amber-600'}`} />
+            <span>
+              {d1Status?.connected && d1Status?.schemaReady
+                ? `Cloudflare D1 Live (${d1Analytics?.summary?.totalEvents ?? 0} analytics events)`
+                : 'Cloudflare D1 Ready'}
+            </span>
+          </button>
         </div>
       </div>
 
@@ -388,8 +375,6 @@ export const DashboardView: React.FC = () => {
             {users.slice(0, 5).map((u) => {
               const userTasks = tasks.filter((t) => t.assignedToId === u.id);
               const userDone = userTasks.filter((t) => t.status === 'Done').length;
-              const userEstHours = userTasks.reduce((acc, t) => acc + (t.estimatedHours || 0), 0);
-              const pct = userTasks.length > 0 ? Math.round((userDone / userTasks.length) * 100) : 0;
 
               return (
                 <div key={u.id} className="p-2.5 rounded bg-gray-50 border border-gray-200 text-xs flex items-center justify-between gap-3">

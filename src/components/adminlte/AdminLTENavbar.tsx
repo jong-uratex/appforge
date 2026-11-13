@@ -9,10 +9,6 @@ import {
   Shield,
   ChevronDown,
   X,
-  FileText,
-  LayoutDashboard,
-  Table2,
-  CheckSquare,
   LogOut,
 } from 'lucide-react';
 
@@ -24,14 +20,11 @@ interface AdminLTENavbarProps {
 }
 
 export const AdminLTENavbar: React.FC<AdminLTENavbarProps> = ({
-  isSidebarCollapsed,
   setIsSidebarCollapsed,
-  isMobileSidebarOpen,
   setIsMobileSidebarOpen,
 }) => {
   const {
     currentUser,
-    permissions,
     activeView,
     setActiveView,
     searchQuery,
@@ -46,7 +39,6 @@ export const AdminLTENavbar: React.FC<AdminLTENavbarProps> = ({
     logoutUser,
   } = useAppForge();
 
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   return (

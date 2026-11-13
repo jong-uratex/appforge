@@ -484,15 +484,15 @@ export const INITIAL_REQUESTS: AppRequest[] = [
     targetGoLiveDate: '2026-11-13',
     tags: ['MDM Portal', 'Price Set-up', 'Promo Upload', 'Customer Channel', 'Sales Ops'],
     subtasks: [
-      { id: 'sub-301', title: 'Add "Linen" and "RGC" to Customer Channel dropdown list in MDM Portal', completed: true, assignedTo: 'John Christian Garon', dueDate: '2026-11-11' },
-      { id: 'sub-302', title: 'Rename existing option "MHA (Mono/Retail)" to "MHA (Mono/Retail/Ecom)"', completed: true, assignedTo: 'John Christian Garon', dueDate: '2026-11-11' },
-      { id: 'sub-303', title: 'Set "Customer Channel" field as mandatory and verify submission block', completed: true, assignedTo: 'John Christian Garon', dueDate: '2026-11-11' },
-      { id: 'sub-304', title: 'Execute regression testing on Price Set-up [GCR CHAR VALUE] & Promo Upload', completed: true, assignedTo: 'Nathaniel Trinidad', dueDate: '2026-11-12' },
-      { id: 'sub-305', title: 'Verify UAT results with Jona Dizon and schedule production edge deployment', completed: false, assignedTo: 'Zyrin Yumul', dueDate: '2026-11-13' },
+      { id: 'sub-scr-301', title: 'Add "Linen" and "RGC" to Customer Channel dropdown list in MDM Portal', completed: true, assignedTo: 'John Christian Garon', dueDate: '2026-11-11' },
+      { id: 'sub-scr-302', title: 'Rename existing option "MHA (Mono/Retail)" to "MHA (Mono/Retail/Ecom)"', completed: true, assignedTo: 'John Christian Garon', dueDate: '2026-11-11' },
+      { id: 'sub-scr-303', title: 'Set "Customer Channel" field as mandatory and verify submission block', completed: true, assignedTo: 'John Christian Garon', dueDate: '2026-11-11' },
+      { id: 'sub-scr-304', title: 'Execute regression testing on Price Set-up [GCR CHAR VALUE] & Promo Upload', completed: true, assignedTo: 'Nathaniel Trinidad', dueDate: '2026-11-12' },
+      { id: 'sub-scr-305', title: 'Verify UAT results with Jona Dizon and schedule production edge deployment', completed: false, assignedTo: 'Zyrin Yumul', dueDate: '2026-11-13' },
     ],
     comments: [
       {
-        id: 'comm-301',
+        id: 'comm-scr-301',
         authorId: 'usr-jona',
         authorName: 'Jona Dizon',
         authorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=120&h=120&q=80',
@@ -502,7 +502,7 @@ export const INITIAL_REQUESTS: AppRequest[] = [
         stageTagged: 'Submitted',
       },
       {
-        id: 'comm-302',
+        id: 'comm-scr-302',
         authorId: 'usr-zyrin',
         authorName: 'Zyrin Yumul',
         authorAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=120&h=120&q=80',
