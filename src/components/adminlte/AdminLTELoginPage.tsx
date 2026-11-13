@@ -1,23 +1,15 @@
 import React, { useState } from 'react';
 import { useAppForge } from '../../context/AppForgeContext';
-import { Department, UserPersona, UserRole } from '../../types/appforge';
+import { Department, UserRole } from '../../types/appforge';
 import {
   Mail,
-  Lock,
   Eye,
   EyeOff,
   Layers,
-  ShieldCheck,
   AlertCircle,
   Cloud,
-  CheckCircle2,
   ArrowRight,
   UserPlus,
-  Building2,
-  Briefcase,
-  KeyRound,
-  Shield,
-  Sparkles,
 } from 'lucide-react';
 
 const DEPARTMENTS: Department[] = [
@@ -32,20 +24,18 @@ const DEPARTMENTS: Department[] = [
 ];
 
 export const AdminLTELoginPage: React.FC = () => {
-  const { users, currentUser, loginUser, loginAsPersona, registerUser } = useAppForge();
+  const { loginUser, registerUser } = useAppForge();
 
   const [mode, setMode] = useState<'signin' | 'register'>('signin');
-  const [email, setEmail] = useState('jenor.ricafort@uratex.com.ph');
-  const [password, setPassword] = useState('uratex2026');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
   // Registration form state
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
-  const [regPassword, setRegPassword] = useState('uratex2026');
   const [regRole, setRegRole] = useState<UserRole>('Team Member');
   const [regDept, setRegDept] = useState<Department>('Management Information Systems (MIS)');
   const [regTitle, setRegTitle] = useState('');
@@ -62,7 +52,7 @@ export const AdminLTELoginPage: React.FC = () => {
     const success = loginUser(email.trim(), password);
     if (!success) {
       setErrorMessage(
-        'Account not found with that email. Please check your spelling or click one of the pre-configured demo personas below.'
+        'No account found with that email address. Please verify your email or register a new account.'
       );
     }
   };
@@ -88,11 +78,6 @@ export const AdminLTELoginPage: React.FC = () => {
       department: regDept,
       title: regTitle.trim() || `${regRole} in ${regDept}`,
     });
-  };
-
-  const handleSelectPersona = (persona: UserPersona) => {
-    setErrorMessage(null);
-    loginAsPersona(persona);
   };
 
   return (
@@ -236,67 +221,6 @@ export const AdminLTELoginPage: React.FC = () => {
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
-
-              {/* Divider */}
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-[10px] font-bold text-gray-400 tracking-wider">
-                    Or Instant Sign In As
-                  </span>
-                </div>
-              </div>
-
-              {/* Quick Persona Logins */}
-              <div className="space-y-2">
-                {users.slice(0, 3).map((u) => {
-                  return (
-                    <button
-                      key={u.id}
-                      type="button"
-                      onClick={() => handleSelectPersona(u)}
-                      className="w-full p-2.5 rounded border border-gray-200 hover:border-blue-500 hover:bg-blue-50/40 text-left flex items-center justify-between gap-3 transition-colors group cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <img
-                          src={u.avatar}
-                          alt={u.name}
-                          className="w-8 h-8 rounded-full object-cover ring-1 ring-gray-300 shrink-0"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="min-w-0 truncate">
-                          <div className="font-bold text-xs text-gray-800 group-hover:text-blue-700 truncate">
-                            {u.name}
-                          </div>
-                          <div className="text-[10px] text-gray-500 truncate">
-                            {u.title}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-right shrink-0">
-                        <span
-                          className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                            u.role === 'Admin'
-                              ? 'bg-purple-100 text-purple-800'
-                              : u.role === 'Project Manager'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-blue-100 text-blue-800'
-                          }`}
-                        >
-                          {u.role}
-                        </span>
-                        <div className="text-[10px] text-blue-600 font-semibold group-hover:underline mt-0.5">
-                          Log in →
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
             </form>
           ) : (
             /* REGISTRATION FORM */
